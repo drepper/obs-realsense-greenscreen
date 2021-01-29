@@ -2,12 +2,16 @@
 #include <cstring>
 #include <vector>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
 #include <glibmm/main.h>
 #include <gdkmm/general.h>
 #include <gdkmm/pixbuf.h>
 #include <gtkmm/application.h>
 #include <gtkmm/drawingarea.h>
 #include <gtkmm/window.h>
+#pragma GCC diagnostic pop
 
 #include "realsense-greenscreen.hh"
 

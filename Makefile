@@ -58,7 +58,7 @@ SUBTARGETS = all install $(CHECKTARGETS) clean dist
 CHECKTARGETS = check
 
 LIBS = $(LIBS-$@)
-
+LIBS-testrealsense = $$($(PKGCONFIG) --libs $(PACKAGES) $(PACKAGES-testrealsense.o))
 
 
 CXXFILES-obs-realsense.so = obs-realsense.cc realsense-greenscreen.o
@@ -72,12 +72,12 @@ obs-mp.so: $(LIBOBJS-obs-mp.so)
 	$(call DE,LINK) "$@"
 	$(DC)$(LINK.cc) -shared -o $@ -Wl,--whole-archive $(filter %.os,$^) -Wl,--no-whole-archive $(LIBS)
 
-test: test.o realsense.o
+testrealsense: testrealsense.o realsense-greenscreen.o
 	$(call DE,LINK) "$@"
-	$(DC)$(LINK.cc) -rdynamic -o $@ -Wl,--whole-archive $(filter %.o,$^) -Wl,--no-whole-archive -ldl
+	$(DC)$(LINK.cc) -o $@ -Wl,--whole-archive $(filter %.o,$^) -Wl,--no-whole-archive $(LIBS-testrealsense)
 
 check: testrealsense
-	./test
+	./testrealsense
 
 -include $(DEPS)
 
