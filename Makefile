@@ -64,20 +64,17 @@ LIBS-testrealsense = $$($(PKGCONFIG) --libs $(PACKAGES) $(PACKAGES-testrealsense
 CXXFILES-obs-realsense.so = obs-realsense.cc realsense-greenscreen.o
 
 LIBOBJS-obs-realsense.so = $(CFILES-obs-realsense.so:.c=.os) $(CXXFILES-obs-realsense.so:.cc=.os)
-ALLOBJS = $(LIBOBJS-obs-mp.so)
+ALLOBJS = $(LIBOBJS-obs-realsense.so) testrealsense.o
 
 all: check#$(PROJECT)
 
-obs-mp.so: $(LIBOBJS-obs-mp.so)
+obs-realsense.so: $(LIBOBJS-obs-realsense.so)
 	$(call DE,LINK) "$@"
 	$(DC)$(LINK.cc) -shared -o $@ -Wl,--whole-archive $(filter %.os,$^) -Wl,--no-whole-archive $(LIBS)
 
 testrealsense: testrealsense.o realsense-greenscreen.o
 	$(call DE,LINK) "$@"
 	$(DC)$(LINK.cc) -o $@ -Wl,--whole-archive $(filter %.o,$^) -Wl,--no-whole-archive $(LIBS-testrealsense)
-
-realsense-greenscreen.o: realsense-greenscreen.hh
-testrealsense.o: realsense-greenscreen.hh
 
 check: testrealsense
 	./testrealsense
