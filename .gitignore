@@ -2,3 +2,7 @@
 testrealsense
 obs-realsense-greenscreen.sublime-project
 obs-realsense-greenscreen.sublime-workspace
+.*.d
+*.os
+obs-realsense.so
+testplugin

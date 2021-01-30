@@ -1,4 +1,4 @@
-PROJECT = obs-realsense-greenscreen.so
+PROJECT = obs-realsense.so
 SRCDIR = .
 
 DISTCC =
@@ -58,32 +58,40 @@ SUBTARGETS = all install $(CHECKTARGETS) clean dist
 CHECKTARGETS = check
 
 LIBS = $(LIBS-$@)
+LIBS-obs-realsense.so = $$($(PKGCONFIG) --libs $(PACKAGES)) -lpthread
+LIBS-testplugin = -lpthread -ldl
 LIBS-testrealsense = $$($(PKGCONFIG) --libs $(PACKAGES) $(PACKAGES-testrealsense.o))
 
 
-CXXFILES-obs-realsense.so = obs-realsense.cc realsense-greenscreen.o
+CXXFILES-obs-realsense.so = obs-realsense.cc realsense-greenscreen.cc
 
 LIBOBJS-obs-realsense.so = $(CFILES-obs-realsense.so:.c=.os) $(CXXFILES-obs-realsense.so:.cc=.os)
 ALLOBJS = $(LIBOBJS-obs-realsense.so) testrealsense.o
+TESTS = testrealsense testplugin
 
-all: check#$(PROJECT)
+all: $(PROJECT)
 
 obs-realsense.so: $(LIBOBJS-obs-realsense.so)
 	$(call DE,LINK) "$@"
-	$(DC)$(LINK.cc) -shared -o $@ -Wl,--whole-archive $(filter %.os,$^) -Wl,--no-whole-archive $(LIBS)
+	$(DC)$(LINK.cc) -shared -o $@ -Wl,--whole-archive $(filter %.os,$^) -Wl,--no-whole-archive $(LIBS-obs-realsense.so)
+
+testplugin: testplugin.o
+	$(call DE,LINK) "$@"
+	$(DC)$(LINK.cc) -rdynamic -o $@ -Wl,--whole-archive $(filter %.o,$^) -Wl,--no-whole-archive $(LIBS-testplugin)
 
 testrealsense: testrealsense.o realsense-greenscreen.o
 	$(call DE,LINK) "$@"
 	$(DC)$(LINK.cc) -o $@ -Wl,--whole-archive $(filter %.o,$^) -Wl,--no-whole-archive $(LIBS-testrealsense)
 
-check: testrealsense
+check: $(TESTS) $(PROJECT)
+	./testplugin
 	./testrealsense
 
 -include $(DEPS)
 
 clean: $(addsuffix /clean,$(SUBDIRS))
 	$(call DE,CLEAN)
-	$(DC)$(RM_F) $(PROJECT) $(ALLOBJS) $(GENERATED) $(DEPS)
+	$(DC)$(RM_F) $(PROJECT) $(TESTS) $(ALLOBJS) $(GENERATED) $(DEPS)
 
 $(foreach t,$(SUBTARGETS),$(addsuffix /$t,$(SUBDIRS) $(TESTDIRS))): %:
 	$(call DE,SUBDIR) "$(@D)" "$(@F)"

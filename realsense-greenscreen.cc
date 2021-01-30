@@ -68,7 +68,7 @@ namespace realsense {
   }// anonymous namespace
 
 
-  greenscreen::greenscreen()
+  greenscreen::greenscreen(video_format format)
     // Calling pipeline's start() without any additional parameters will start the first device
     // with its default streams.
     // The start function returns the pipeline profile which the pipeline used to start the device
@@ -93,6 +93,19 @@ namespace realsense {
     rs2::video_frame other_frame = processed.first(align_to);
     width = other_frame.get_width();
     height = other_frame.get_height();
+    bpp = format == video_format::rgb ? 3 : 4;
+  }
+
+
+  greenscreen::~greenscreen()
+  {
+    pipe.stop();
+  }
+
+
+  inline bool greenscreen::valid_distance(size_t pixels_distance) const
+  {
+    return pixels_distance > lower_limit && pixels_distance <= upper_limit;
   }
 
 
@@ -107,14 +120,32 @@ namespace realsense {
     size_t other_bpp = other_frame.get_bytes_per_pixel();
     assert(other_bpp == 3);
 
-    for (size_t y = 0; y < height; y++) {
-      auto depth_pixel_index = y * width;
-      auto offset = depth_pixel_index * other_bpp;
-      for (size_t x = 0; x < width; x++, ++depth_pixel_index, offset += other_bpp) {
-        // Get the depth value of the current pixel
-        auto pixels_distance = depth_frame[depth_pixel_index];
+    if (bpp == other_bpp) {
+      for (size_t y = 0; y < height; y++) {
+        auto depth_pixel_index = y * width;
+        auto offset = depth_pixel_index * other_bpp;
+        for (size_t x = 0; x < width; x++, ++depth_pixel_index, offset += other_bpp) {
+          // Get the depth value of the current pixel
+          auto pixels_distance = depth_frame[depth_pixel_index];
 
-        std::memcpy(&dest[offset], pixels_distance <= lower_limit || pixels_distance > upper_limit ? green_bytes : &p_other_frame[offset], other_bpp);
+          std::memcpy(&dest[offset], valid_distance(pixels_distance) ? &p_other_frame[offset] : green_bytes, other_bpp);
+        }
+      }
+    } else {
+      for (size_t y = 0; y < height; y++) {
+        auto depth_pixel_index = y * width;
+        auto src_offset = depth_pixel_index * other_bpp;
+        auto dst_offset = depth_pixel_index * bpp;
+        for (size_t x = 0; x < width; x++, ++depth_pixel_index, src_offset += other_bpp, dst_offset += bpp) {
+          // Get the depth value of the current pixel
+          auto pixels_distance = depth_frame[depth_pixel_index];
+
+          if (valid_distance(pixels_distance)) {
+            std::memcpy(&dest[dst_offset], &p_other_frame[src_offset], other_bpp);
+            dest[dst_offset + 3] = green_bytes[3];
+          } else
+            std::memcpy(&dest[dst_offset], green_bytes, bpp);
+        }
       }
     }
   }

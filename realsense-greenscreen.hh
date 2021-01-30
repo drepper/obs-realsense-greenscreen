@@ -7,17 +7,27 @@
 
 namespace realsense {
 
+  enum struct video_format {
+    rgb,
+    rgba,
+  };
+
+
   struct greenscreen
   {
-    greenscreen();
+    greenscreen(video_format format = video_format::rgb);
+    ~greenscreen();
 
     bool get_frame(uint8_t*);
 
     auto get_width() const { return width; }
     auto get_height() const { return height; }
+    auto get_bpp() const { return bpp; }
+    auto get_framesize() const { return width * height * bpp; }
 
   private:
     rs2::frameset wait();
+    bool valid_distance(size_t pixels_distance) const;
     void remove_background(uint8_t* dest, rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame);
 
     // Create a pipeline to easily configure and start the camera
@@ -41,9 +51,10 @@ namespace realsense {
 
     size_t width;
     size_t height;
+    size_t bpp;
 
     // Greenscreen color.
-    unsigned char green_bytes[3] = { 0xdd, 0x44, 0xff };
+    unsigned char green_bytes[4] = { 0xdd, 0x44, 0xff, 0xff };
   };
 
 } // namespace realsense
