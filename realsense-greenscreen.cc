@@ -84,8 +84,8 @@ namespace realsense {
     // Using the pipeline's profile, we can retrieve the device that the pipeline uses
     depth_scale(get_depth_scale(profile.get_device())),
     // Compute the foreground limit
-    upper_limit(depth_clipping_distance / depth_scale),
-    lower_limit(0.05f / depth_scale)
+    upper_limit(depth_clipping_max_distance / depth_scale),
+    lower_limit(depth_clipping_min_distance / depth_scale)
   {
     // Get one frame to determine the size.
     auto frameset = wait();

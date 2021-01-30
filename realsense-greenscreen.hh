@@ -32,7 +32,8 @@ namespace realsense {
     float depth_scale;
 
     // Define a variable for controlling the distance to clip
-    float depth_clipping_distance = 1.f;
+    float depth_clipping_min_distance = 0.10f;
+    float depth_clipping_max_distance = 1.00f;
 
     // Computed limit for foreground;
     uint16_t upper_limit;
