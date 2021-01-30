@@ -78,11 +78,14 @@ namespace {
   }
 
 
-  void* plugin_create(obs_data_t* /*settings*/, obs_source_t* source)
+  void* plugin_create(obs_data_t* settings, obs_source_t* source)
   {
     auto mem = bzalloc(sizeof(plugin_context));
 
     auto res = new(mem) plugin_context(source);
+
+    obs_data_set_default_int(settings, "backgroundcolor", res->cam.get_color());
+    obs_data_set_default_double(settings, "maxdistance", res->cam.get_max_distance());
 
     return res;
   }
@@ -99,17 +102,41 @@ namespace {
   }
 
 
+  obs_properties_t* plugin_properties(void *)
+  {
+    auto props = obs_properties_create();
+
+    obs_properties_add_float_slider(props, "maxdistance", obs_module_text("Cutoff distance"), 0.25, 3.0, 0.0625);
+
+    obs_properties_add_color(props, "backgroundcolor", obs_module_text("Background Color"));
+
+    return props;
+  }
+
+
+  void plugin_update(void* data, obs_data_t* settings)
+  {
+    auto ctx = static_cast<plugin_context*>(data);
+
+    auto color = (uint32_t) obs_data_get_int(settings, "backgroundcolor");
+    ctx->cam.set_color(color);
+
+    auto maxdistance = obs_data_get_double(settings, "maxdistance");
+    ctx->cam.set_max_distance(maxdistance);
+  }
+
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
   obs_source_info realsense_info = {
-    .id = "RealSense Greenscreen",
+    .id = "RealSense Greenscreen" ,
     .type = OBS_SOURCE_TYPE_INPUT,
     .output_flags = OBS_SOURCE_ASYNC_VIDEO,
     .get_name = plugin_getname,
     .create = plugin_create,
     .destroy = plugin_destroy,
-    // .get_properties = plugin_properties,
-    // .update = plugin_update,
+    .get_properties = plugin_properties,
+    .update = plugin_update,
     .icon_type = OBS_ICON_TYPE_CAMERA,
   };
 #pragma GCC diagnostic pop

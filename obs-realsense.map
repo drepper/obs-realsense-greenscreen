@@ -1,0 +1,6 @@
+{
+global:
+	obs_*;
+local:
+	*;
+};

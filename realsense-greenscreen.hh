@@ -25,6 +25,12 @@ namespace realsense {
     auto get_bpp() const { return bpp; }
     auto get_framesize() const { return width * height * bpp; }
 
+    uint32_t get_color() const { return (uint32_t(green_bytes[0]) << 16) | (uint32_t(green_bytes[1]) << 8) | uint32_t(green_bytes[2]);  }
+    float get_max_distance() const { return depth_clipping_max_distance; }
+
+    void set_color(uint32_t newcol);
+    void set_max_distance(float newmax);
+
   private:
     rs2::frameset wait();
     bool valid_distance(size_t pixels_distance) const;

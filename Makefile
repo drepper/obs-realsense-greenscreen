@@ -1,3 +1,5 @@
+VERSION = 1.0
+
 PROJECT = obs-realsense.so
 SRCDIR = .
 
@@ -24,9 +26,9 @@ CPPFLAGS = -I$(SRCDIR) $(OTHERINCLUDES) $$($(PKGCONFIG) --cflags $(PACKAGES) $(P
 CXXFLAGS = $(CXXSTD) $(DIAGNOSTICS) $(RECORD_SWITCHES) $(WARN) $(WARNCXX) $(OPT) -I$(SRCDIR) $(DEBUG) $(GCOVFLAGS) $(ASANFLAGS) $(ANALYZER) $(CXXFLAGS-$@)
 LDFLAGS = -Wl,-O1 -Wl,-z,relro $(LDOPT)
 
-DEFINES =
+DEFINES = -DVERSION=\"$(VERSION)\"
 OTHERINCLUDES =
-DEPS = $(foreach f,$(ALLOBJS),$(dir $(f)).$(notdir $(f:.o=.d)))
+DEPS = $(foreach f,$(filter %.o,$(ALLOBJS)),$(dir $(f)).$(notdir $(f:.o=.d))) $(foreach f,$(filter %.os,$(ALLOBJS)),$(dir $(f)).$(notdir $(f:.os=.d)))
 
 WARN = -Wall -Wextra -Wnull-dereference -Wdouble-promotion -Wshadow -Wformat=2 -Wcast-qual -Wcast-align -Wstrict-aliasing -Wpointer-arith -Winit-self -Wredundant-decls -Wundef -Wempty-body -Wdouble-promotion
 WARNCXX = -Wuseless-cast -Wsuggest-override
@@ -66,14 +68,14 @@ LIBS-testrealsense = $$($(PKGCONFIG) --libs $(PACKAGES) $(PACKAGES-testrealsense
 CXXFILES-obs-realsense.so = obs-realsense.cc realsense-greenscreen.cc
 
 LIBOBJS-obs-realsense.so = $(CFILES-obs-realsense.so:.c=.os) $(CXXFILES-obs-realsense.so:.cc=.os)
-ALLOBJS = $(LIBOBJS-obs-realsense.so) testrealsense.o
+ALLOBJS = $(LIBOBJS-obs-realsense.so) testplugin.o testrealsense.o
 TESTS = testrealsense testplugin
 
 all: $(PROJECT)
 
 obs-realsense.so: $(LIBOBJS-obs-realsense.so)
 	$(call DE,LINK) "$@"
-	$(DC)$(LINK.cc) -shared -o $@ -Wl,--whole-archive $(filter %.os,$^) -Wl,--no-whole-archive $(LIBS-obs-realsense.so)
+	$(DC)$(LINK.cc) -shared -o $@ -Wl,--whole-archive $(filter %.os,$^) -Wl,--no-whole-archive $(LIBS-obs-realsense.so) -Wl,--version-script,obs-realsense.map
 
 testplugin: testplugin.o
 	$(call DE,LINK) "$@"

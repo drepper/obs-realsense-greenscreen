@@ -29,7 +29,7 @@ namespace {
 
   int test()
   {
-    // [[maybe_unused]] auto properties = source->get_properties(nullptr);
+    [[maybe_unused]] auto properties = source->get_properties(nullptr);
 
     auto ctx = source->create(nullptr, nullptr);
 
@@ -105,12 +105,6 @@ extern "C" {
   }
 
 
-  obs_property_t* obs_properties_add_path(obs_properties_t* /*props*/, const char* /*name*/, const char* /*description*/, enum obs_path_type /*type*/, const char* /*filter*/, const char* /*default_path*/)
-  {
-    return nullptr;
-  }
-
-
   const char* obs_module_text(const char* val)
   {
     return val;
@@ -121,9 +115,32 @@ extern "C" {
     return nullptr;
   }
 
-  const char* obs_data_get_string(obs_data_t* /*data*/, const char* /*name*/)
+  obs_property_t* obs_properties_add_float_slider(obs_properties_t*, const char*, const char*, double, double, double)
   {
     return nullptr;
+  }
+
+  obs_property_t* obs_properties_add_color(obs_properties_t*, const char*, const char*)
+  {
+    return nullptr;
+  }
+
+  long long int obs_data_get_int(obs_data_t* /*data*/, const char* /*name*/)
+  {
+    return 0xdd44ff;
+  }
+
+  double obs_data_get_double(obs_data_t* /*data*/, const char* /*name*/)
+  {
+    return 1.0;
+  }
+
+  void obs_data_set_default_double(obs_data_t*, const char*, double)
+  {
+  }
+
+  void obs_data_set_default_int(obs_data_t*, const char*, long long)
+  {
   }
 
   void text_lookup_destroy(lookup_t* /*lookup*/)

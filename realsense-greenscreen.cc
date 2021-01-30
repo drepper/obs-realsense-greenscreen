@@ -199,4 +199,20 @@ namespace realsense {
     return true;
   }
 
+
+  void greenscreen::set_color(uint32_t newcol)
+  {
+    green_bytes[0] = (newcol >> 16) & 0xff;
+    green_bytes[1] = (newcol >> 8) & 0xff;
+    green_bytes[2] = newcol & 0xff;
+  }
+
+
+  void greenscreen::set_max_distance(float newmax)
+  {
+    depth_clipping_max_distance = newmax;
+    upper_limit = depth_clipping_max_distance / depth_scale;
+  }
+
+
 } // namespace realsense
