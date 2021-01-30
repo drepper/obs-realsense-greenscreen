@@ -1,7 +1,11 @@
+#include <cassert>
 #include <cstring>
 #include <stdexcept>
 
 #include "realsense-greenscreen.hh"
+
+// XYZ Debug
+#include <iostream>
 
 
 namespace realsense {
@@ -81,8 +85,14 @@ namespace realsense {
     depth_scale(get_depth_scale(profile.get_device())),
     // Compute the foreground limit
     upper_limit(depth_clipping_distance / depth_scale),
-    lower_limit(0.05 / depth_scale)
+    lower_limit(0.05f / depth_scale)
   {
+    // Get one frame to determine the size.
+    auto frameset = wait();
+    auto processed = align.process(frameset);
+    rs2::video_frame other_frame = processed.first(align_to);
+    width = other_frame.get_width();
+    height = other_frame.get_height();
   }
 
 
@@ -92,11 +102,11 @@ namespace realsense {
 
     uint8_t* p_other_frame = reinterpret_cast<uint8_t*>(const_cast<void*>(other_frame.get_data()));
 
-    size_t width = other_frame.get_width();
-    size_t height = other_frame.get_height();
+    assert(width == size_t(other_frame.get_width()));
+    assert(height == size_t(other_frame.get_height()));
     size_t other_bpp = other_frame.get_bytes_per_pixel();
+    assert(other_bpp == 3);
 
-#pragma omp parallel for schedule(dynamic) //Using OpenMP to try to parallelise the loop
     for (size_t y = 0; y < height; y++) {
       auto depth_pixel_index = y * width;
       auto offset = depth_pixel_index * other_bpp;
@@ -110,7 +120,7 @@ namespace realsense {
   }
 
 
-  bool greenscreen::get_frame(uint8_t* dest)
+  rs2::frameset greenscreen::wait()
   {
     // Using the align object, we block the application until a frameset is available
     rs2::frameset frameset = pipe.wait_for_frames();
@@ -132,6 +142,14 @@ namespace realsense {
       // Using the pipeline's profile, we can retrieve the device that the pipeline uses
       depth_scale = get_depth_scale(profile.get_device());
     }
+
+    return frameset;    
+  }
+
+
+  bool greenscreen::get_frame(uint8_t* dest)
+  {
+    auto frameset = wait();
 
     // Get processed aligned frame
     auto processed = align.process(frameset);

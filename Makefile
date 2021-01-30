@@ -76,6 +76,9 @@ testrealsense: testrealsense.o realsense-greenscreen.o
 	$(call DE,LINK) "$@"
 	$(DC)$(LINK.cc) -o $@ -Wl,--whole-archive $(filter %.o,$^) -Wl,--no-whole-archive $(LIBS-testrealsense)
 
+realsense-greenscreen.o: realsense-greenscreen.hh
+testrealsense.o: realsense-greenscreen.hh
+
 check: testrealsense
 	./testrealsense
 

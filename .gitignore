@@ -1,2 +1,4 @@
 *.o
 testrealsense
+obs-realsense-greenscreen.sublime-project
+obs-realsense-greenscreen.sublime-workspace

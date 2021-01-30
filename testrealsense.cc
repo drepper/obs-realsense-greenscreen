@@ -36,7 +36,7 @@ namespace {
   memory_pixbuf::memory_pixbuf(realsense::greenscreen& cam_)
   : cam(cam_)
   {
-    m_image = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, 1280, 768);
+    m_image = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, cam.get_width(), cam.get_height());
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &memory_pixbuf::on_timeout), 33);
   }
 
@@ -69,7 +69,7 @@ namespace {
   : m(cam)
   {
     set_title("Test of RealSense greenscreen");
-    set_default_size(1280, 768);
+    set_default_size(cam.get_width(), cam.get_height());
     add(m);
     m.show();
   };

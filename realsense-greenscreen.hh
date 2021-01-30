@@ -13,7 +13,11 @@ namespace realsense {
 
     bool get_frame(uint8_t*);
 
+    auto get_width() const { return width; }
+    auto get_height() const { return height; }
+
   private:
+    rs2::frameset wait();
     void remove_background(uint8_t* dest, rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame);
 
     // Create a pipeline to easily configure and start the camera
@@ -34,8 +38,8 @@ namespace realsense {
     uint16_t upper_limit;
     uint16_t lower_limit;
 
-    // // Support for averaging the depth values.
-    // average_mask<1,uint16_t,uint32_t> av;
+    size_t width;
+    size_t height;
 
     // Greenscreen color.
     unsigned char green_bytes[3] = { 0xdd, 0x44, 0xff };
