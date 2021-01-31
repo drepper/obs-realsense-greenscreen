@@ -5,14 +5,20 @@
 #include "realsense-greenscreen.hh"
 
 // XYZ Debug
-#include <iostream>
+// #include <iostream>
+
+// Parts of this file are derived from Intel's rs-align-advanced example
+// which carries this copyright nore:
+//
+//     License: Apache 2.0. See LICENSE file in root directory.
+//     Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 
 
 namespace realsense {
 
   namespace {
 
-    float get_depth_scale(rs2::device dev)
+    float get_depth_scale(const rs2::device& dev)
     {
       // Go over the device's sensors
       for (rs2::sensor& sensor : dev.query_sensors())
@@ -213,6 +219,5 @@ namespace realsense {
     depth_clipping_max_distance = newmax;
     upper_limit = depth_clipping_max_distance / depth_scale;
   }
-
 
 } // namespace realsense

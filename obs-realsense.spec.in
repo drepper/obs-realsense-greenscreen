@@ -1,0 +1,36 @@
+Summary: OBS RealSense Greenscreen Plugin
+Name: obs-realsense-greenscreen
+Version: @VERSION@
+Release: 1
+URL: https://github.com/drepper/obs-realsense-greenscreen
+Source: https://github.com/drepper/obs-realsense-greenscreen/archive/obs-realsense-greenscreen-@VERSION@.tar.xz
+License: GPLv2
+
+BuildRequires: gcc-c++ >= 10.1
+BuildRequires: librealsense2-devel
+
+%description
+
+This OBS plugin provides a virtual greenscreen using the depth field
+of the Intel RealSense cameras.
+
+%prep
+%setup -q
+
+%build
+make OPTS="${RPM_OPT_FLAGS}"
+
+%install
+rm -rf ${RPM_BUILD_ROOT}
+mkdir -p ${RPM_BUILD_ROOT}%{_prefix}
+
+%make_install
+
+%files
+%defattr(-,root,root)
+%doc README.md
+%{_libdir}/obs-plugins/obs-realsense.so
+
+%changelog
+* Sun Jan 31 2021 Ulrich Drepper <drepper@gmail.com> 1.0-1
+- First release

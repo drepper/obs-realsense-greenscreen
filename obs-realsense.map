@@ -1,6 +1,6 @@
 {
-global:
-	obs_*;
-local:
-	*;
+  global:
+    obs_*;
+  local:
+    *;
 };

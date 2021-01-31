@@ -21,6 +21,13 @@ PKGCONFIG = pkg-config
 endif
 RM = rm
 RM_F = $(RM) -f
+MV_F = mv -f
+LN_FS = ln -fs
+INSTALL = install
+RPMBUILD = rpmbuild
+SED = sed
+TAR = tar
+GAWK = gawk
 
 CPPFLAGS = -I$(SRCDIR) $(OTHERINCLUDES) $$($(PKGCONFIG) --cflags $(PACKAGES) $(PACKAGES-$@)) $(DEFINES) $(DEFINES-$@)
 CXXFLAGS = $(CXXSTD) $(DIAGNOSTICS) $(RECORD_SWITCHES) $(WARN) $(WARNCXX) $(OPT) -I$(SRCDIR) $(DEBUG) $(GCOVFLAGS) $(ASANFLAGS) $(ANALYZER) $(CXXFLAGS-$@)
@@ -53,6 +60,9 @@ ARCHIVE = $(AR) $(ARFLAGS)
 endif
 endif
 
+prefix = /usr
+libdir = $(prefix)/$(shell $(CXX) -print-file-name=libc.so | $(GAWK) -v FS='/' '{ print($$(NF-1)) }')
+
 SUBDIRS =
 LIBDIRS =
 TESTDIRS =
@@ -84,6 +94,24 @@ testplugin: testplugin.o
 testrealsense: testrealsense.o realsense-greenscreen.o
 	$(call DE,LINK) "$@"
 	$(DC)$(LINK.cc) -o $@ -Wl,--whole-archive $(filter %.o,$^) -Wl,--no-whole-archive $(LIBS-testrealsense)
+
+obs-realsense.spec: obs-realsense.spec.in Makefile
+	$(SED) 's/@VERSION@/$(VERSION)/' $< > $@-tmp
+	$(MV_F) $@-tmp $@
+
+install: $(PROJECT)
+	$(call DE,INSTALL) "$<"
+	$(DC)$(INSTALL) -D -c -m 755 obs-realsense.so $(DESTDIR)$(libdir)/obs-plugins/obs-realsense.so
+
+dist: obs-realsense.spec
+	$(LN_FS) . obs-realsense-greenscreen-$(VERSION)
+	$(TAR) achf obs-realsense-greenscreen-$(VERSION).tar.xz obs-realsense-greenscreen-$(VERSION)/{Makefile,README.md,obs-realsense.cc,realsense-greenscreen.cc,realsense-greenscreen.hh,testplugin.cc,testrealsense.cc,obs-realsense.spec{,.in},obs-realsense.map}
+	$(RM_F) obs-realsense-greenscreen-$(VERSION)
+
+srpm: dist
+	$(RPMBUILD) -ts obs-realsense-greenscreen-$(VERSION).tar.xz
+rpm: dist
+	$(RPMBUILD) -tb obs-realsense-greenscreen-$(VERSION).tar.xz
 
 check: $(TESTS) $(PROJECT)
 	./testplugin
@@ -148,4 +176,5 @@ COMPILE_ARGS = -o $@ -MMD -MF $(@D)/.$(@F:$(suffix $@)=.d) $<
 	$(call DE,GCH) "$<"
 	$(DC)$(COMPILE.cc) $(COMPILE_ARGS)
 
-.PHONY: all clean
+.PHONY: all clean install check dist srpm rpm
+.ONESHELL:

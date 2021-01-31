@@ -6,3 +6,5 @@ obs-realsense-greenscreen.sublime-workspace
 *.os
 obs-realsense.so
 testplugin
+obs-realsense.spec
+obs-realsense-greenscreen-*.tar.xz
