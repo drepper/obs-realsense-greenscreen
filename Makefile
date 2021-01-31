@@ -105,7 +105,7 @@ install: $(PROJECT)
 
 dist: obs-realsense.spec
 	$(LN_FS) . obs-realsense-greenscreen-$(VERSION)
-	$(TAR) achf obs-realsense-greenscreen-$(VERSION).tar.xz obs-realsense-greenscreen-$(VERSION)/{Makefile,README.md,obs-realsense.cc,realsense-greenscreen.cc,realsense-greenscreen.hh,testplugin.cc,testrealsense.cc,obs-realsense.spec{,.in},obs-realsense.map}
+	$(TAR) zchf obs-realsense-greenscreen-$(VERSION).tar.gz obs-realsense-greenscreen-$(VERSION)/{Makefile,README.md,obs-realsense.cc,realsense-greenscreen.cc,realsense-greenscreen.hh,testplugin.cc,testrealsense.cc,obs-realsense.spec{,.in},obs-realsense.map}
 	$(RM_F) obs-realsense-greenscreen-$(VERSION)
 
 srpm: dist

@@ -3,7 +3,7 @@ Name: obs-realsense-greenscreen
 Version: @VERSION@
 Release: 1
 URL: https://github.com/drepper/obs-realsense-greenscreen
-Source: https://github.com/drepper/obs-realsense-greenscreen/archive/obs-realsense-greenscreen-@VERSION@.tar.xz
+Source: https://github.com/drepper/obs-realsense-greenscreen/archive/obs-realsense-greenscreen-@VERSION@.tar.gz
 License: GPLv2
 
 BuildRequires: gcc-c++ >= 10.1
