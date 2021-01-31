@@ -83,7 +83,7 @@ TESTS = testrealsense testplugin
 
 all: $(PROJECT)
 
-obs-realsense.so: $(LIBOBJS-obs-realsense.so)
+obs-realsense.so: $(LIBOBJS-obs-realsense.so) obs-realsense.map
 	$(call DE,LINK) "$@"
 	$(DC)$(LINK.cc) -shared -o $@ -Wl,--whole-archive $(filter %.os,$^) -Wl,--no-whole-archive $(LIBS-obs-realsense.so) -Wl,--version-script,obs-realsense.map
 
@@ -91,9 +91,9 @@ testplugin: testplugin.o
 	$(call DE,LINK) "$@"
 	$(DC)$(LINK.cc) -rdynamic -o $@ -Wl,--whole-archive $(filter %.o,$^) -Wl,--no-whole-archive $(LIBS-testplugin)
 
-testrealsense: testrealsense.o realsense-greenscreen.o
+testrealsense: testrealsense.o realsense-greenscreen.os
 	$(call DE,LINK) "$@"
-	$(DC)$(LINK.cc) -o $@ -Wl,--whole-archive $(filter %.o,$^) -Wl,--no-whole-archive $(LIBS-testrealsense)
+	$(DC)$(LINK.cc) -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive $(LIBS-testrealsense)
 
 obs-realsense.spec: obs-realsense.spec.in Makefile
 	$(SED) 's/@VERSION@/$(VERSION)/' $< > $@-tmp
@@ -177,4 +177,3 @@ COMPILE_ARGS = -o $@ -MMD -MF $(@D)/.$(@F:$(suffix $@)=.d) $<
 	$(DC)$(COMPILE.cc) $(COMPILE_ARGS)
 
 .PHONY: all clean install check dist srpm rpm
-.ONESHELL:
