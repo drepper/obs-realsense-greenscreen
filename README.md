@@ -31,8 +31,8 @@ Testing
 Before running OBS with the plugin, when all other things can potentially go wrong,
 use the `testrealsense` binary.  It consists of just a few lines of C++ using
 `gtkmm` to create an appropriately sized window and display the frames the camera
-provides.  Nothing else.  The progam is not build and shipped when you use the
-include RPM `.spec` file.
+provides.  Nothing else.  Press the escape key to exit the program.  The progam
+is not build and shipped when you use the include RPM `.spec` file.
 
 
 Using the plugin with OBS

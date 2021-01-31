@@ -15,6 +15,9 @@
 
 #include "realsense-greenscreen.hh"
 
+// XYZ DEBUG
+// #include <iostream>
+
 
 namespace {
 
@@ -65,6 +68,7 @@ namespace {
   {
     pixbuf_window(realsense::greenscreen& cam_);
   private:
+    bool on_keypress(GdkEventKey* event);
     memory_pixbuf m;
   };
 
@@ -73,10 +77,20 @@ namespace {
   {
     set_title("Test of RealSense greenscreen");
     set_default_size(cam.get_width(), cam.get_height());
+    signal_key_press_event().connect(sigc::mem_fun(*this, &pixbuf_window::on_keypress), false);
 
     add(m);
     m.show();
-  };
+  }
+
+  bool pixbuf_window::on_keypress(GdkEventKey* event)
+  {
+    if (event->keyval == GDK_KEY_Escape) {
+      hide();
+      return true;
+    }
+    return false;
+  }
 
 } // anonymous namespace
 
