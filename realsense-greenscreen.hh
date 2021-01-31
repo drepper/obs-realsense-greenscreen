@@ -15,8 +15,10 @@ namespace realsense {
 
   struct greenscreen
   {
-    greenscreen(video_format format = video_format::rgb);
+    greenscreen(video_format format_ = video_format::rgb);
     ~greenscreen();
+
+    auto get_format() const { return format; }
 
     bool get_frame(uint8_t*);
 
@@ -29,12 +31,15 @@ namespace realsense {
     float get_max_distance() const { return depth_clipping_max_distance; }
 
     void set_color(uint32_t newcol);
+    void set_transparency(unsigned char newa) { green_bytes[3] = newa; }
     void set_max_distance(float newmax);
 
   private:
     rs2::frameset wait();
     bool valid_distance(size_t pixels_distance) const;
     void remove_background(uint8_t* dest, rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame);
+
+    video_format format;
 
     // Create a pipeline to easily configure and start the camera
     rs2::pipeline pipe;

@@ -36,7 +36,10 @@ namespace {
   memory_pixbuf::memory_pixbuf(realsense::greenscreen& cam_)
   : cam(cam_)
   {
-    m_image = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, false, 8, cam.get_width(), cam.get_height());
+    bool transparent = cam.get_format() == realsense::video_format::rgba;
+    if (transparent)
+      cam.set_transparency(0);
+    m_image = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, transparent, 8, cam.get_width(), cam.get_height());
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &memory_pixbuf::on_timeout), 33);
   }
 
@@ -70,6 +73,7 @@ namespace {
   {
     set_title("Test of RealSense greenscreen");
     set_default_size(cam.get_width(), cam.get_height());
+
     add(m);
     m.show();
   };
@@ -79,7 +83,8 @@ namespace {
 
 int main(int argc, char* argv[])
 {
-  realsense::greenscreen cam;
+  bool transparent = false;
+  realsense::greenscreen cam(transparent ? realsense::video_format::rgba : realsense::video_format::rgb);
 
   Glib::RefPtr<Gtk::Application> app = Gtk::Application::create(argc, argv, "org.akkadia.testrealsense");
   pixbuf_window w(cam);

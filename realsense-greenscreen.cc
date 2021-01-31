@@ -74,11 +74,12 @@ namespace realsense {
   }// anonymous namespace
 
 
-  greenscreen::greenscreen(video_format format)
+  greenscreen::greenscreen(video_format format_)
+  : format(format_),
     // Calling pipeline's start() without any additional parameters will start the first device
     // with its default streams.
     // The start function returns the pipeline profile which the pipeline used to start the device
-  : profile(pipe.start()),
+    profile(pipe.start()),
     // Pipeline could choose a device that does not have a color stream
     // If there is no color stream, choose to align depth to another stream
     align_to(find_stream_to_align(profile.get_streams())),
@@ -148,7 +149,7 @@ namespace realsense {
 
           if (valid_distance(pixels_distance)) {
             std::memcpy(&dest[dst_offset], &p_other_frame[src_offset], other_bpp);
-            dest[dst_offset + 3] = green_bytes[3];
+            dest[dst_offset + 3] = 0xff;
           } else
             std::memcpy(&dest[dst_offset], green_bytes, bpp);
         }
