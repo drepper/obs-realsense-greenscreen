@@ -80,9 +80,7 @@ namespace {
 
   void* plugin_create(obs_data_t* settings, obs_source_t* source)
   {
-    auto mem = bzalloc(sizeof(plugin_context));
-
-    auto res = new(mem) plugin_context(source);
+    auto res = new plugin_context(source);
 
     obs_data_set_default_int(settings, "backgroundcolor", res->cam.get_color());
     obs_data_set_default_double(settings, "maxdistance", res->cam.get_max_distance());
@@ -95,10 +93,8 @@ namespace {
   {
     auto ctx = static_cast<plugin_context*>(data);
 
-    if (ctx) {
-      ctx->~plugin_context();
-      bfree(ctx);
-    }
+    if (ctx)
+      delete ctx;
   }
 
 

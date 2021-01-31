@@ -152,16 +152,6 @@ extern "C" {
     return false;
   }
 
-
-  void* bmalloc(size_t s)
-  {
-    return malloc(s);
-  }
-
-  void bfree(void* p)
-  {
-    free(p);  
-  }
 }
 
 

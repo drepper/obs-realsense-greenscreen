@@ -11,6 +11,30 @@ library.  This plugin just performs the masking and it implements the interface 
 OBS.
 
 
+Building
+--------
+
+If the required packages are installed, just run `make`.  The include RPM `.spec`
+file codifies the dependencies which are
+-     gcc 10 or higher (tested with C++20 only)
+-     `librealsense`.  This is shipped in the old 2.38 version in Fedora 33 but
+      it works for me.
+-     gtkmm 3.
+
+For both `librealsense` and gtkmm it is of course necessary to install the `-devel`
+sub-package as well.
+
+
+Testing
+-------
+
+Before running OBS with the plugin, when all other things can potentially go wrong,
+use the `testrealsense` binary.  It consists of just a few lines of C++ using
+`gtkmm` to create an appropriately sized window and display the frames the camera
+provides.  Nothing else.  The progam is not build and shipped when you use the
+include RPM `.spec` file.
+
+
 Using the plugin with OBS
 -------------------------
 
@@ -35,6 +59,8 @@ Caveats
 
 This plugin has so far been tested only on my machine:
 
+-    The only camera tested so far is the L515.  I hope that the `librealsense2`
+     library handles the other libraries the same.
 -    I have not even tested what happens no camera is attached.
 -    it definitely is no tested what happens if multiple RealSense
      cameras are attached.  The `librealsense2` documentation specifies
