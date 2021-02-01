@@ -83,7 +83,7 @@ namespace {
   }
 
 
-  bool device_selected(obs_properties_t* /*props*/, obs_property_t* /*p*/, obs_data_t* settings)
+  bool device_selected(void* /*data*/, obs_properties_t */*props*/, obs_property_t* /*p*/, obs_data_t *settings)
   {
     std::cout << "device selected " << obs_data_get_string(settings, "devicename") << "  resolution " << obs_data_get_string(settings, "resolutions") << std::endl;
     return true;
@@ -130,7 +130,7 @@ namespace {
         obs_property_list_add_string(devicename, cur.c_str(), std::get<4>(e).c_str());
         last = cur;
       }
-    obs_property_set_modified_callback(devicename, device_selected);
+    obs_property_set_modified_callback2(devicename, device_selected, data);
 
     auto resolutions = obs_properties_add_list(props, "resolutions", obs_module_text("Resolution"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
     for (const auto& e : ctx->cam.available)

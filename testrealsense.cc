@@ -32,6 +32,7 @@ namespace {
     bool on_timeout();
 
     realsense::greenscreen& cam;
+    size_t frame_size;
 
     Glib::RefPtr<Gdk::Pixbuf> m_image;
   };
@@ -43,13 +44,14 @@ namespace {
     if (transparent)
       cam.set_transparency(0);
     m_image = Gdk::Pixbuf::create(Gdk::COLORSPACE_RGB, transparent, 8, cam.get_width(), cam.get_height());
+    frame_size = cam.get_width() * cam.get_height() * (transparent ? 4 : 3);
     Glib::signal_timeout().connect(sigc::mem_fun(*this, &memory_pixbuf::on_timeout), 33);
   }
 
   bool memory_pixbuf::on_draw(const Cairo::RefPtr<Cairo::Context>& cr)
   {
     if (m_image) {
-      cam.get_frame(m_image->get_pixels());
+      cam.get_frame(m_image->get_pixels(), frame_size);
 
       Gdk::Cairo::set_source_pixbuf(cr, m_image, 0, 0);
       cr->paint();

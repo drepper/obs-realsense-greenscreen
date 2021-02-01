@@ -29,8 +29,6 @@ namespace {
 
   int test()
   {
-    [[maybe_unused]] auto properties = source->get_properties(nullptr);
-
     auto ctx = source->create(nullptr, nullptr);
 
     sleep(2);
@@ -125,6 +123,20 @@ extern "C" {
     return nullptr;
   }
 
+  obs_property_t* obs_properties_add_list(obs_properties_t*, const char*, const char*, enum obs_combo_type, enum obs_combo_format)
+  {
+    return nullptr;
+  }
+
+  size_t obs_property_list_add_string(obs_property_t *, const char *, const char *)
+  {
+    return 0;
+  }
+
+  void obs_property_set_modified_callback2(obs_property_t *, obs_property_modified2_t, void *)
+  {
+  }
+
   long long int obs_data_get_int(obs_data_t* /*data*/, const char* /*name*/)
   {
     return 0xdd44ff;
@@ -133,6 +145,15 @@ extern "C" {
   double obs_data_get_double(obs_data_t* /*data*/, const char* /*name*/)
   {
     return 1.0;
+  }
+
+  const char* obs_data_get_string(obs_data_t */*data*/, const char */*name*/)
+  {
+    return nullptr;
+  }
+
+  void obs_data_set_string(obs_data_t */*data*/, const char */*name*/, const char */*val*/)
+  {
   }
 
   void obs_data_set_default_double(obs_data_t*, const char*, double)

@@ -1,4 +1,4 @@
-VERSION = 1.0
+VERSION = 1.1
 
 PROJECT = obs-realsense.so
 SRCDIR = .
@@ -109,9 +109,9 @@ dist: obs-realsense.spec
 	$(RM_F) obs-realsense-greenscreen-$(VERSION)
 
 srpm: dist
-	$(RPMBUILD) -ts obs-realsense-greenscreen-$(VERSION).tar.xz
+	$(RPMBUILD) -ts obs-realsense-greenscreen-$(VERSION).tar.gz
 rpm: dist
-	$(RPMBUILD) -tb obs-realsense-greenscreen-$(VERSION).tar.xz
+	$(RPMBUILD) -tb obs-realsense-greenscreen-$(VERSION).tar.gz
 
 check: $(TESTS) $(PROJECT)
 	./testplugin
