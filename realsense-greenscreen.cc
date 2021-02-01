@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstring>
+#include <set>
 #include <stdexcept>
 
 #include "realsense-greenscreen.hh"
@@ -74,12 +75,14 @@ namespace realsense {
   }// anonymous namespace
 
 
-  greenscreen::greenscreen(video_format format_)
+  device::device(video_format format_, float min_distance, float max_distance, unsigned char* color, rs2::config& config)
   : format(format_),
+    // Create the pipeline object.
+    pipe(std::make_unique<rs2::pipeline>()),
     // Calling pipeline's start() without any additional parameters will start the first device
     // with its default streams.
     // The start function returns the pipeline profile which the pipeline used to start the device
-    profile(pipe.start()),
+    profile(pipe->start(config)),
     // Pipeline could choose a device that does not have a color stream
     // If there is no color stream, choose to align depth to another stream
     align_to(find_stream_to_align(profile.get_streams())),
@@ -90,6 +93,9 @@ namespace realsense {
     // Each depth camera might have different units for depth pixels, so we get it here
     // Using the pipeline's profile, we can retrieve the device that the pipeline uses
     depth_scale(get_depth_scale(profile.get_device())),
+    // From the caller.
+    depth_clipping_min_distance(min_distance),
+    depth_clipping_max_distance(max_distance),
     // Compute the foreground limit
     upper_limit(depth_clipping_max_distance / depth_scale),
     lower_limit(depth_clipping_min_distance / depth_scale)
@@ -98,25 +104,31 @@ namespace realsense {
     auto frameset = wait();
     auto processed = align.process(frameset);
     rs2::video_frame other_frame = processed.first(align_to);
+
+    name = std::string(profile.get_device().get_info(RS2_CAMERA_INFO_NAME));
+    serial = std::string(profile.get_device().get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
+
     width = other_frame.get_width();
     height = other_frame.get_height();
     bpp = format == video_format::rgb ? 3 : 4;
+    
+    std::copy_n(color, sizeof(green_bytes), green_bytes);
   }
 
 
-  greenscreen::~greenscreen()
+  device::~device()
   {
-    pipe.stop();
+    pipe->stop();
   }
 
 
-  inline bool greenscreen::valid_distance(size_t pixels_distance) const
+  inline bool device::valid_distance(size_t pixels_distance) const
   {
     return pixels_distance > lower_limit && pixels_distance <= upper_limit;
   }
 
 
-  void greenscreen::remove_background(uint8_t* dest, rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame_)
+  void device::remove_background(uint8_t* dest, size_t framesize, rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame_)
   {
     const uint16_t* depth_frame = reinterpret_cast<const uint16_t*>(depth_frame_.get_data());
 
@@ -127,8 +139,10 @@ namespace realsense {
     size_t other_bpp = other_frame.get_bytes_per_pixel();
     assert(other_bpp == 3);
 
+    size_t copy_height = width * height * bpp <= framesize ? height : (framesize / (width * bpp));
+
     if (bpp == other_bpp) {
-      for (size_t y = 0; y < height; y++) {
+      for (size_t y = 0; y < copy_height; y++) {
         auto depth_pixel_index = y * width;
         auto offset = depth_pixel_index * other_bpp;
         for (size_t x = 0; x < width; x++, ++depth_pixel_index, offset += other_bpp) {
@@ -139,7 +153,7 @@ namespace realsense {
         }
       }
     } else {
-      for (size_t y = 0; y < height; y++) {
+      for (size_t y = 0; y < copy_height; y++) {
         auto depth_pixel_index = y * width;
         auto src_offset = depth_pixel_index * other_bpp;
         auto dst_offset = depth_pixel_index * bpp;
@@ -158,17 +172,17 @@ namespace realsense {
   }
 
 
-  rs2::frameset greenscreen::wait()
+  rs2::frameset device::wait()
   {
     // Using the align object, we block the application until a frameset is available
-    rs2::frameset frameset = pipe.wait_for_frames();
+    rs2::frameset frameset = pipe->wait_for_frames();
 
     // rs2::pipeline::wait_for_frames() can replace the device it uses in case of device error or disconnection.
     // Since rs2::align is aligning depth to some other stream, we need to make sure that the stream was not changed
     //  after the call to wait_for_frames();
-    if (profile_changed(pipe.get_active_profile().get_streams(), profile.get_streams())) {
+    if (profile_changed(pipe->get_active_profile().get_streams(), profile.get_streams())) {
       //If the profile was changed, update the align object, and also get the new device's depth scale
-      profile = pipe.get_active_profile();
+      profile = pipe->get_active_profile();
       // Pipeline could choose a device that does not have a color stream
       // If there is no color stream, choose to align depth to another stream
       align_to = find_stream_to_align(profile.get_streams());
@@ -185,7 +199,7 @@ namespace realsense {
   }
 
 
-  bool greenscreen::get_frame(uint8_t* dest)
+  bool device::get_frame(uint8_t* dest, size_t framesize)
   {
     auto frameset = wait();
 
@@ -201,9 +215,126 @@ namespace realsense {
       return false;
 
     // Passing both frames to remove_background so it will "strip" the background
-    remove_background(dest, other_frame, aligned_depth_frame);
+    remove_background(dest, framesize, other_frame, aligned_depth_frame);
 
     return true;
+  }
+
+
+  void device::set_color(uint32_t newcol)
+  {
+    green_bytes[0] = (newcol >> 16) & 0xff;
+    green_bytes[1] = (newcol >> 8) & 0xff;
+    green_bytes[2] = newcol & 0xff;
+  }
+
+
+  void device::set_max_distance(float newmax)
+  {
+    depth_clipping_max_distance = newmax;
+    upper_limit = depth_clipping_max_distance / depth_scale;
+  }
+
+
+  greenscreen::greenscreen(video_format format_)
+  : format(format_), max_width(0), max_height(0)
+  {
+    rs2::config config;
+    // config.enable_stream(RS2_STREAM_DEPTH);
+    // config.enable_stream(RS2_STREAM_COLOR, 1920, 1080);
+
+    dev = std::make_unique<device>(format, depth_clipping_min_distance, depth_clipping_max_distance, green_bytes, config);
+
+    available.emplace_back(dev->name + " [" + dev->serial + "]", dev->width, dev->height, std::to_string(dev->width) + " × " + std::to_string(dev->height), dev->serial);
+
+    rs2::context ctx;
+    for (auto&& d : ctx.query_devices()) {
+      auto serial = d.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+      auto devname = std::string(d.get_info(RS2_CAMERA_INFO_NAME)) + " [" + serial + "]";
+
+      std::set<std::tuple<size_t,size_t>> resolutions;
+
+      auto sensors = d.query_sensors();
+      for (const auto& s : sensors) {
+        if (s.as<rs2::color_sensor>()) {
+          auto profiles = s.get_stream_profiles();
+          for (const auto& p : profiles)
+            if (const auto& vp = p.as<rs2::video_stream_profile>())
+              resolutions.insert(std::make_tuple<size_t,size_t>(vp.width(), vp.height()));
+        }
+      }
+
+      for (auto&& res : resolutions) {
+        if (dev->serial != serial || dev->width != std::get<0>(res) || dev->height != std::get<1>(res)) {
+          auto resstr = std::to_string(std::get<0>(res)) + " × " + std::to_string(std::get<1>(res));
+          available.emplace_back(devname, std::get<0>(res), std::get<1>(res), resstr, std::string(serial));
+        }
+
+        max_width = std::max(max_width, size_t(std::get<0>(res)));
+        max_height = std::max(max_height, size_t(std::get<1>(res)));
+      }
+    }
+
+    // Don't sort the first element.
+    std::sort(available.begin() + 1, available.end(), [](const auto& l, const auto& r){
+      auto cr = std::get<0>(l).compare(std::get<0>(r));
+      if (cr != 0)
+        return cr < 0;
+      if (std::get<1>(l) != std::get<1>(r))
+        return std::get<1>(l) > std::get<1>(r);
+      return std::get<2>(l) > std::get<2>(r);
+    });
+  }
+
+
+  bool greenscreen::new_config(const std::string& serial, const std::string& resolution)
+  {
+    auto it = std::find_if(available.begin(), available.end(), [&serial, &resolution](const auto& e){
+      return std::get<4>(e) == serial && std::get<3>(e) == resolution;
+    });
+    if (it == available.end())
+      return false;
+
+    if (dev->serial == serial && dev->width == std::get<1>(*it) && dev->height == std::get<2>(*it))
+      // Nothing changed.
+      return false;
+
+    rs2::config config;
+    config.enable_device(serial);
+    config.enable_stream(RS2_STREAM_DEPTH);
+    config.enable_stream(RS2_STREAM_COLOR, int(std::get<1>(*it)), int(std::get<2>(*it)));
+
+    const std::lock_guard<std::mutex> guard(devlock);
+
+    dev.reset(nullptr);
+    dev = std::make_unique<device>(format, depth_clipping_min_distance, depth_clipping_max_distance, green_bytes, config);
+
+    return true;
+  }
+
+
+  bool greenscreen::get_frame(uint8_t* dest, size_t framesize)
+  {
+    const std::lock_guard<std::mutex> guard(devlock);
+
+    return dev->get_frame(dest, framesize);
+  }
+
+
+  size_t greenscreen::get_width() const{
+    return dev->get_width();
+  }
+  size_t greenscreen::get_height() const
+  {
+    return dev->get_height();
+  }
+  size_t greenscreen::get_bpp() const
+  {
+    return dev->get_bpp();
+  }
+  size_t greenscreen::get_framesize() const
+  {
+    return max_width * max_height * (format == video_format::rgb ? 3 : 4);
   }
 
 
@@ -212,13 +343,22 @@ namespace realsense {
     green_bytes[0] = (newcol >> 16) & 0xff;
     green_bytes[1] = (newcol >> 8) & 0xff;
     green_bytes[2] = newcol & 0xff;
+
+    dev->set_color(newcol);
   }
 
+  void greenscreen::set_transparency(unsigned char newa)
+  {
+    green_bytes[3] = newa;
+
+    dev->set_transparency(newa);
+  }
 
   void greenscreen::set_max_distance(float newmax)
   {
     depth_clipping_max_distance = newmax;
-    upper_limit = depth_clipping_max_distance / depth_scale;
+
+    dev->set_max_distance(newmax);
   }
 
 } // namespace realsense

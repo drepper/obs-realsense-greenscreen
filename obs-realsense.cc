@@ -9,7 +9,7 @@
 #include "realsense-greenscreen.hh"
 
 // XYZ DEBUG
-// #include <iostream>
+#include <iostream>
 
 
 namespace {
@@ -50,20 +50,25 @@ namespace {
 
   void plugin_context::video_thread()
   {
-    std::unique_ptr<uint8_t[]> mem(new uint8_t[cam.get_framesize()]);
+    auto framesize = cam.get_framesize();
+    std::unique_ptr<uint8_t[]> mem(new uint8_t[framesize]);
 
     obs_source_frame obs_frame;
     memset(&obs_frame, '\0', sizeof(obs_frame));
     obs_frame.data[0] = mem.get();
-    obs_frame.linesize[0] = cam.get_width() * cam.get_bpp();
-    obs_frame.width = cam.get_width();
-    obs_frame.height = cam.get_height();
+    // obs_frame.linesize[0] = cam.get_width() * cam.get_bpp();
+    // obs_frame.width = cam.get_width();
+    // obs_frame.height = cam.get_height();
     obs_frame.format = VIDEO_FORMAT_RGBA;
 
     auto cur_time = os_gettime_ns();
 
     while (! terminate) {
-      cam.get_frame(mem.get());
+      cam.get_frame(mem.get(), framesize);
+      obs_frame.linesize[0] = cam.get_width() * cam.get_bpp();
+      obs_frame.width = cam.get_width();
+      obs_frame.height = cam.get_height();
+
       obs_frame.timestamp = cur_time;
       obs_source_output_video(source, &obs_frame);
       //
@@ -75,6 +80,13 @@ namespace {
   const char *plugin_getname(void *)
   {
     return "RealSense Greenscreen";
+  }
+
+
+  bool device_selected(obs_properties_t* /*props*/, obs_property_t* /*p*/, obs_data_t* settings)
+  {
+    std::cout << "device selected " << obs_data_get_string(settings, "devicename") << "  resolution " << obs_data_get_string(settings, "resolutions") << std::endl;
+    return true;
   }
 
 
@@ -98,9 +110,32 @@ namespace {
   }
 
 
-  obs_properties_t* plugin_properties(void *)
+  void plugin_defaults(obs_data_t* settings)
   {
+    obs_data_set_string(settings, "devicename", "");
+    obs_data_set_string(settings, "resolutions", "");
+  }
+
+
+  obs_properties_t* plugin_properties(void *data)
+  {
+    auto ctx = static_cast<plugin_context*>(data);
+
     auto props = obs_properties_create();
+
+    auto devicename = obs_properties_add_list(props, "devicename", obs_module_text("Device"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+    std::string last;
+    for (const auto& e : ctx->cam.available)
+      if (auto cur = std::get<0>(e); cur != last) {
+        obs_property_list_add_string(devicename, cur.c_str(), std::get<4>(e).c_str());
+        last = cur;
+      }
+    obs_property_set_modified_callback(devicename, device_selected);
+
+    auto resolutions = obs_properties_add_list(props, "resolutions", obs_module_text("Resolution"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+    for (const auto& e : ctx->cam.available)
+      if (std::get<0>(e) == std::get<0>(ctx->cam.available.front())) 
+        obs_property_list_add_string(resolutions, std::get<3>(e).c_str(), std::get<3>(e).c_str());
 
     obs_properties_add_float_slider(props, "maxdistance", obs_module_text("Cutoff distance"), 0.25, 3.0, 0.0625);
 
@@ -113,6 +148,10 @@ namespace {
   void plugin_update(void* data, obs_data_t* settings)
   {
     auto ctx = static_cast<plugin_context*>(data);
+
+    auto serial = obs_data_get_string(settings, "devicename");
+    auto resolution = obs_data_get_string(settings, "resolutions");
+    ctx->cam.new_config(serial, resolution);
 
     auto color = (uint32_t) obs_data_get_int(settings, "backgroundcolor");
     ctx->cam.set_color(color);
@@ -131,6 +170,7 @@ namespace {
     .get_name = plugin_getname,
     .create = plugin_create,
     .destroy = plugin_destroy,
+    .get_defaults = plugin_defaults,
     .get_properties = plugin_properties,
     .update = plugin_update,
     .icon_type = OBS_ICON_TYPE_CAMERA,

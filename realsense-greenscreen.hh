@@ -2,6 +2,10 @@
 #define _REALSENSE_GREENSCREEN_HH 1
 
 #include <cstdint>
+#include <memory>
+#include <mutex>
+#include <tuple>
+#include <vector>
 #include <librealsense2/rs.hpp>
 
 
@@ -13,36 +17,29 @@ namespace realsense {
   };
 
 
-  struct greenscreen
+  struct device
   {
-    greenscreen(video_format format_ = video_format::rgb);
-    ~greenscreen();
+    device(video_format format_, float min_distance, float max_distance, unsigned char* color, rs2::config& config);
+    ~device();
 
-    auto get_format() const { return format; }
-
-    bool get_frame(uint8_t*);
+    bool get_frame(uint8_t*, size_t framesize);
 
     auto get_width() const { return width; }
     auto get_height() const { return height; }
     auto get_bpp() const { return bpp; }
-    auto get_framesize() const { return width * height * bpp; }
-
-    uint32_t get_color() const { return (uint32_t(green_bytes[0]) << 16) | (uint32_t(green_bytes[1]) << 8) | uint32_t(green_bytes[2]);  }
-    float get_max_distance() const { return depth_clipping_max_distance; }
 
     void set_color(uint32_t newcol);
     void set_transparency(unsigned char newa) { green_bytes[3] = newa; }
     void set_max_distance(float newmax);
 
-  private:
     rs2::frameset wait();
     bool valid_distance(size_t pixels_distance) const;
-    void remove_background(uint8_t* dest, rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame);
+    void remove_background(uint8_t* dest, size_t framesize, rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame);
 
-    video_format format;
+    const video_format format;
 
     // Create a pipeline to easily configure and start the camera
-    rs2::pipeline pipe;
+    std::unique_ptr<rs2::pipeline> pipe;
 
     rs2::pipeline_profile profile;
 
@@ -51,6 +48,10 @@ namespace realsense {
     rs2::align align;
 
     float depth_scale;
+
+    // Serial number of currently used device.
+    std::string name;
+    std::string serial;
 
     // Define a variable for controlling the distance to clip
     float depth_clipping_min_distance = 0.10f;
@@ -64,8 +65,48 @@ namespace realsense {
     size_t height;
     size_t bpp;
 
-    // Greenscreen color.
+    // device color.
+    unsigned char green_bytes[4];
+  };
+
+
+  struct greenscreen {
+    greenscreen(video_format format_ = video_format::rgb);
+
+    bool new_config(const std::string& serial, const std::string& resolution);
+
+    video_format get_format() const { return format; }
+
+    bool get_frame(uint8_t* dest, size_t framesize);
+
+    size_t get_width() const;
+    size_t get_height() const;
+    size_t get_bpp() const;
+    size_t get_framesize() const;
+
+    uint32_t get_color() const { return (uint32_t(green_bytes[0]) << 16) | (uint32_t(green_bytes[1]) << 8) | uint32_t(green_bytes[2]);  }
+    float get_max_distance() const { return depth_clipping_max_distance; }
+
+    void set_color(uint32_t newcol);
+    void set_transparency(unsigned char newa);
+    void set_max_distance(float newmax);
+
+    const video_format format;
+
+    // Define a variable for controlling the distance to clip
+    float depth_clipping_min_distance = 0.10f;
+    float depth_clipping_max_distance = 1.00f;
+
     unsigned char green_bytes[4] = { 0xdd, 0x44, 0xff, 0xff };
+
+    size_t max_width;
+    size_t max_height;
+
+    using available_type = std::tuple<std::string,size_t,size_t,std::string,std::string>;
+    std::vector<available_type> available;
+
+    std::mutex devlock;
+    std::unique_ptr<device> dev;
   };
 
 } // namespace realsense
