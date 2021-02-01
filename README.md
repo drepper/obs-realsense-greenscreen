@@ -42,8 +42,8 @@ After installation the plugin should be immediately found by OBS.  Adding it as
 a source happens just as for other cameras, just select the "RealSense Greenscreen"
 source.
 
-The property dialog allows to set the maximum distance (in meters) and greenscreen
-color.
+The property dialog allows to change the resolution, set the maximum distance (in meters)
+and greenscreen color.
 
 After the camera source has been added one can use the chroma key filter.  To enable
 the filter select the `RealSense Greenscreen` source in the `Sources` list.  Right
@@ -61,12 +61,10 @@ This plugin has so far been tested only on my machine:
 
 -    The only camera tested so far is the L515.  I hope that the `librealsense2`
      library handles the other libraries the same.
--    I have not even tested what happens no camera is attached.
--    it definitely is no tested what happens if multiple RealSense
+-    I have not even tested what happens if no camera is attached.
+-    it definitely is not tested what happens if multiple RealSense
      cameras are attached.  The `librealsense2` documentation specifies
      the first found device is used.
--    The resolution used is also the default one selected by the
-     library.  It might be possible to overwrite this selection.
 -    The frequency of the picture provided is fixed at 30Hz.  Not sure
      whether this needs to be variable.
 -    The depth sensor is quite noisy.  When running the `testrealsense`
