@@ -143,12 +143,12 @@ namespace {
       return 0;
     }
 
-    pixbuf_window* win = nullptr;
+    std::unique_ptr<pixbuf_window> win;
     realsense::greenscreen& cam;
 
     void on_activate() override
     {
-      win = new pixbuf_window(cam);
+      win = std::make_unique<pixbuf_window>(cam);
       add_window(*win);
       win->show();
     }
