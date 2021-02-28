@@ -94,7 +94,7 @@ namespace {
   }
 
 
-  struct testrealsense : Gtk::Application
+  struct testrealsense final : Gtk::Application
   {
     testrealsense(realsense::greenscreen& cam_)
     : Gtk::Application("org.akkadia.testrealsense", Gio::APPLICATION_HANDLES_COMMAND_LINE),
