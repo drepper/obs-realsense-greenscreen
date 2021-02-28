@@ -27,7 +27,7 @@ namespace {
 
   private:
 
-    virtual bool on_draw(const Cairo::RefPtr<Cairo::Context>& cr) override;
+    bool on_draw(const Cairo::RefPtr<Cairo::Context>& cr) override;
     bool on_timeout();
 
     realsense::greenscreen& cam;
@@ -104,7 +104,7 @@ namespace {
     int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& cmd) override
     {
       int argc;
-      char **argv = cmd->get_arguments(argc);
+      auto argv = cmd->get_arguments(argc);
 
       std::string serial;
       long width = -1;

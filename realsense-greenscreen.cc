@@ -64,9 +64,8 @@ namespace realsense {
     bool profile_changed(const std::vector<rs2::stream_profile>& current, const std::vector<rs2::stream_profile>& prev)
     {
       for (auto&& sp : prev) {
-        //If previous profile is in current (maybe just added another)
         auto itr = std::find_if(std::begin(current), std::end(current), [&sp](const rs2::stream_profile& current_sp) { return sp.unique_id() == current_sp.unique_id(); });
-        if (itr == std::end(current)) //If it previous stream wasn't found in current
+        if (itr == std::end(current))
           return true;
       }
       return false;
@@ -240,8 +239,6 @@ namespace realsense {
   : format(format_), max_width(0), max_height(0)
   {
     rs2::config config;
-    // config.enable_stream(RS2_STREAM_DEPTH);
-    // config.enable_stream(RS2_STREAM_COLOR, 1920, 1080);
 
     dev = std::make_unique<device>(format, depth_clipping_min_distance, depth_clipping_max_distance, green_bytes, config);
 
