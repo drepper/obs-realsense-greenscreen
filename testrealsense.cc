@@ -1,5 +1,6 @@
 #include <array>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <vector>
 
@@ -164,7 +165,7 @@ int main(int argc, char* argv[])
 
   if (argc > 1 && strcmp(argv[1], "-l") == 0) {
     for (const auto& d : cam.available) {
-      std::cout << "serial=" << std::get<4>(d) << "  width=" << std::get<1>(d) << "  height=" << std::get<2>(d) << std::endl;
+      std::cout << "serial=" << std::get<4>(d) << "  width=" << std::setw(4) << std::get<1>(d) << "  height=" << std::setw(4) << std::get<2>(d) << std::endl;
     }
     return 0;
   }
