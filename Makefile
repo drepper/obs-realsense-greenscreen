@@ -19,8 +19,6 @@ PKGCONFIG = true
 else
 PKGCONFIG = pkg-config
 endif
-RM = rm
-RM_F = $(RM) -f
 MV_F = mv -f
 LN_FS = ln -fs
 INSTALL = install
@@ -106,7 +104,7 @@ install: $(PROJECT)
 dist: obs-realsense.spec
 	$(LN_FS) . obs-realsense-greenscreen-$(VERSION)
 	$(TAR) zchf obs-realsense-greenscreen-$(VERSION).tar.gz obs-realsense-greenscreen-$(VERSION)/{Makefile,README.md,obs-realsense.cc,realsense-greenscreen.cc,realsense-greenscreen.hh,testplugin.cc,testrealsense.cc,obs-realsense.spec{,.in},obs-realsense.map}
-	$(RM_F) obs-realsense-greenscreen-$(VERSION)
+	$(RM) obs-realsense-greenscreen-$(VERSION)
 
 srpm: dist
 	$(RPMBUILD) -ts obs-realsense-greenscreen-$(VERSION).tar.gz
@@ -121,7 +119,7 @@ check: $(TESTS) $(PROJECT)
 
 clean: $(addsuffix /clean,$(SUBDIRS))
 	$(call DE,CLEAN)
-	$(DC)$(RM_F) $(PROJECT) $(TESTS) $(ALLOBJS) $(GENERATED) $(DEPS)
+	$(DC)$(RM) $(PROJECT) $(TESTS) $(ALLOBJS) $(GENERATED) $(DEPS)
 
 $(foreach t,$(SUBTARGETS),$(addsuffix /$t,$(SUBDIRS) $(TESTDIRS))): %:
 	$(call DE,SUBDIR) "$(@D)" "$(@F)"

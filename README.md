@@ -17,8 +17,7 @@ Building
 If the required packages are installed, just run `make`.  The include RPM `.spec`
 file codifies the dependencies which are
 -     gcc 10 or higher (tested with C++20 only)
--     `librealsense`.  This is shipped in the old 2.38 version in Fedora 33 but
-      it works for me.
+-     `librealsense`.  Fedora 33 ships the old 2.38 version but it works for me.
 -     gtkmm 3.
 
 For both `librealsense` and gtkmm it is of course necessary to install the `-devel`
@@ -38,19 +37,18 @@ is not build and shipped when you use the include RPM `.spec` file.
 Using the plugin with OBS
 -------------------------
 
-After installation the plugin should be immediately found by OBS.  Adding it as
-a source happens just as for other cameras, just select the "RealSense Greenscreen"
-source.
+After installation the plugin should be immediately found by OBS.  Adding it as a source happens
+just as for other cameras, just select the "RealSense Greenscreen" source.
 
-The property dialog allows to change the resolution, set the maximum distance (in meters)
-and greenscreen color.
+The property dialog allows to select the device, change the resolution, set the
+maximum distance (in meters) and greenscreen color.
 
 After the camera source has been added one can use the chroma key filter.  To enable
 the filter select the `RealSense Greenscreen` source in the `Sources` list.  Right
 click on the entry to bring up the context dialog and select the `Filters` menu item.
 This allows to add the `Chroma Key` effect filter.  Just make sure to select the
 key color as selected for the source and play a bit with the `Similarity` and
-`Key Color Spull Reduction` sliders to get an acceptable result.
+`Key Color Spill Reduction` sliders to get an acceptable result.
 
 
 
@@ -60,11 +58,8 @@ Caveats
 This plugin has so far been tested only on my machine:
 
 -    The only camera tested so far is the L515.  I hope that the `librealsense2`
-     library handles the other libraries the same.
+     library handles the other devices the same.
 -    I have not even tested what happens if no camera is attached.
--    it definitely is not tested what happens if multiple RealSense
-     cameras are attached.  The `librealsense2` documentation specifies
-     the first found device is used.
 -    The frequency of the picture provided is fixed at 30Hz.  Not sure
      whether this needs to be variable.
 -    The depth sensor is quite noisy.  When running the `testrealsense`
