@@ -1,5 +1,6 @@
 #include <array>
 #include <cstring>
+#include <iostream>
 #include <vector>
 
 #pragma GCC diagnostic push
@@ -14,9 +15,6 @@
 #pragma GCC diagnostic pop
 
 #include "realsense-greenscreen.hh"
-
-// XYZ DEBUG
-// #include <iostream>
 
 
 namespace {
@@ -94,6 +92,68 @@ namespace {
     return false;
   }
 
+
+  struct testrealsense : Gtk::Application
+  {
+    testrealsense(realsense::greenscreen& cam_)
+    : Gtk::Application("org.akkadia.testrealsense", Gio::APPLICATION_HANDLES_COMMAND_LINE),
+      cam(cam_)
+    {}
+
+    int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& cmd) override
+    {
+      int argc;
+      char **argv = cmd->get_arguments(argc);
+
+      std::string serial;
+      long width = -1;
+      long height = -1;
+      while (true) {
+        auto opt = getopt(argc, argv, "s:w:h:");
+        if (opt == -1)
+          break;
+        switch (opt) {
+        case 's':
+          serial = optarg;
+          break;
+        case 'w':
+          width = std::atoi(optarg);
+          break;
+        case 'h':
+          height = std::atoi(optarg);
+          break;
+        }
+      }
+
+      if (! serial.empty() || width != -1 || height != -1) {
+        bool found = false;
+        for (const auto& d : cam.available)
+          if ((serial.empty() || std::get<4>(d) == serial) &&
+              (width == -1 || std::get<1>(d) == size_t(width)) &&
+              (height == -1 || std::get<2>(d) == size_t(height))) {
+            cam.new_config(std::get<4>(d), std::get<3>(d));
+            found = true;
+            break;
+          }
+        if (! found)
+          throw std::runtime_error("did not find matching device");
+      }
+
+      activate();
+      return 0;
+    }
+
+    pixbuf_window* win = nullptr;
+    realsense::greenscreen& cam;
+
+    void on_activate() override
+    {
+      win = new pixbuf_window(cam);
+      add_window(*win);
+      win->show();
+    }
+  };
+
 } // anonymous namespace
 
 
@@ -102,7 +162,12 @@ int main(int argc, char* argv[])
   bool transparent = false;
   realsense::greenscreen cam(transparent ? realsense::video_format::rgba : realsense::video_format::rgb);
 
-  Glib::RefPtr<Gtk::Application> app = Gtk::Application::create(argc, argv, "org.akkadia.testrealsense");
-  pixbuf_window w(cam);
-  return app->run(w);
+  if (argc > 1 && strcmp(argv[1], "-l") == 0) {
+    for (const auto& d : cam.available) {
+      std::cout << "serial=" << std::get<4>(d) << "  width=" << std::get<1>(d) << "  height=" << std::get<2>(d) << std::endl;
+    }
+    return 0;
+  }
+
+  return testrealsense(cam).run(argc, argv);
 }
