@@ -24,6 +24,17 @@ For both `librealsense` and gtkmm it is of course necessary to install the `-dev
 sub-package as well.
 
 
+### Alternative `librealsense`
+
+To test a `librealsense` other than the officially installed version use the
+`make` command with the variable `ALT_LIBREALSENSE` pointing to the appropriate
+directory:
+
+    make ALT_LIBREALSENSE=/home/drepper/librealsense
+
+This works with the official `librealsense` sources off of github.
+
+
 Testing
 -------
 

@@ -27,12 +27,18 @@ SED = sed
 TAR = tar
 GAWK = gawk
 
+ALT_LIBREALSENSE =
+
 CPPFLAGS = -I$(SRCDIR) $(OTHERINCLUDES) $$($(PKGCONFIG) --cflags $(PACKAGES) $(PACKAGES-$@)) $(DEFINES) $(DEFINES-$@)
 CXXFLAGS = $(CXXSTD) $(DIAGNOSTICS) $(RECORD_SWITCHES) $(WARN) $(WARNCXX) $(OPT) -I$(SRCDIR) $(DEBUG) $(GCOVFLAGS) $(ASANFLAGS) $(ANALYZER) $(CXXFLAGS-$@)
 LDFLAGS = -Wl,-O1 -Wl,-z,relro $(LDOPT)
 
 DEFINES = -DVERSION=\"$(VERSION)\"
 OTHERINCLUDES =
+ifneq (,$(ALT_LIBREALSENSE))
+OTHERINCLUDES += -I$(ALT_LIBREALSENSE)/include
+LDOPT += -L$(ALT_LIBREALSENSE) -Wl,-R,$(ALT_LIBREALSENSE)
+endif
 DEPS = $(foreach f,$(filter %.o,$(ALLOBJS)),$(dir $(f)).$(notdir $(f:.o=.d))) $(foreach f,$(filter %.os,$(ALLOBJS)),$(dir $(f)).$(notdir $(f:.os=.d)))
 
 WARN = -Wall -Wextra -Wnull-dereference -Wdouble-promotion -Wshadow -Wformat=2 -Wcast-qual -Wcast-align -Wstrict-aliasing -Wpointer-arith -Winit-self -Wredundant-decls -Wundef -Wempty-body -Wdouble-promotion
