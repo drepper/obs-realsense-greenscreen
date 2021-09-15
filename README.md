@@ -84,6 +84,24 @@ This plugin has so far been tested only on my machine:
 -    Obviously, the code has only been tested under Fedora.
 
 
+Trouble Shooting
+----------------
+
+Connecting to the camera sometimes fails.  One will see then errors
+from `librealsense` like
+
+    RealSense error calling rs2_pipeline_wait_for_frames(pipe:0x1ffabe0):
+        Frame didn't arrive within 15000
+
+For me this does not mean a problem in the code.  Instead, it seems
+related to the USB device connection.  Unplugging the camera and then
+reattaching it usually fixes this for me.
+
+In future I might try to automatically handle this.  Linux allows to reset
+an USB device through an `ioctl` call with `USBDEVFS_RESET`.  I will give
+this a try the next time I run into the problem.
+
+
 Author
 ------
 Ulrich Drepper <drepper@gmail.com>
