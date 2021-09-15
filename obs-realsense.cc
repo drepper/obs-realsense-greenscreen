@@ -83,7 +83,7 @@ namespace {
   }
 
 
-  bool device_selected(void* /*data*/, obs_properties_t */*props*/, obs_property_t* /*p*/, obs_data_t *settings)
+  bool device_selected(void* /*data*/, obs_properties_t */*props*/, obs_property_t* /*p*/, obs_data_t */*settings*/)
   {
     // std::cout << "device selected " << obs_data_get_string(settings, "devicename") << "  resolution " << obs_data_get_string(settings, "resolutions") << std::endl;
     return true;
