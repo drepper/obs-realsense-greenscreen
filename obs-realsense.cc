@@ -92,12 +92,17 @@ namespace {
 
   void* plugin_create(obs_data_t* settings, obs_source_t* source)
   {
-    auto res = new plugin_context(source);
+    try {
+      auto res = new plugin_context(source);
 
-    obs_data_set_default_int(settings, "backgroundcolor", res->cam.get_color());
-    obs_data_set_default_double(settings, "maxdistance", res->cam.get_max_distance());
+      obs_data_set_default_int(settings, "backgroundcolor", res->cam.get_color());
+      obs_data_set_default_double(settings, "maxdistance", res->cam.get_max_distance());
 
-    return res;
+      return res;
+    }
+    catch (rs2::backend_error& e) {
+      return nullptr;
+    }
   }
 
 
