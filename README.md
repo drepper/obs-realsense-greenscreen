@@ -102,6 +102,10 @@ an USB device through an `ioctl` call with `USBDEVFS_RESET`.  I will give
 this a try the next time I run into the problem.
 
 
+If the camera is already in use the plugin will not report any resources
+to OBS.  Any already source in a scene will just be zero-sized.
+
+
 Author
 ------
 Ulrich Drepper <drepper@gmail.com>
