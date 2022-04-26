@@ -74,7 +74,7 @@ namespace realsense {
   }// anonymous namespace
 
 
-  device::device(video_format format_, float min_distance, float max_distance, unsigned char* color, rs2::config& config)
+  device::device(video_format format_, float min_distance, float max_distance, size_t ndepth_history, unsigned char* color, rs2::config& config)
   : format(format_),
     // Create the pipeline object.
     pipe(std::make_unique<rs2::pipeline>()),
@@ -110,7 +110,10 @@ namespace realsense {
     width = other_frame.get_width();
     height = other_frame.get_height();
     bpp = format == video_format::rgb ? 3 : 4;
-    
+
+    for (size_t i = 0; i < ndepth_history; ++i)
+      depth_history.emplace_back(width * height);
+
     std::copy_n(color, sizeof(green_bytes), green_bytes);
   }
 
@@ -129,7 +132,13 @@ namespace realsense {
 
   void device::remove_background(uint8_t* dest, size_t framesize, rs2::video_frame& other_frame, const rs2::depth_frame& depth_frame_)
   {
+    assert(depth_frame_.get_bytes_per_pixel() == 2);
     const uint16_t* depth_frame = reinterpret_cast<const uint16_t*>(depth_frame_.get_data());
+    auto ndepth_history = depth_history.size();
+    assert(size_t(depth_frame_.get_width()) * size_t(depth_frame_.get_height()) == depth_history[last_depth_frame].size());
+    std::copy_n(depth_frame, depth_history[last_depth_frame].size(), depth_history[last_depth_frame].data());
+    if (++last_depth_frame == ndepth_history)
+      last_depth_frame = 0;
 
     uint8_t* p_other_frame = reinterpret_cast<uint8_t*>(const_cast<void*>(other_frame.get_data()));
 
@@ -145,9 +154,12 @@ namespace realsense {
         auto depth_pixel_index = y * width;
         auto offset = depth_pixel_index * other_bpp;
         for (size_t x = 0; x < width; x++, ++depth_pixel_index, offset += other_bpp) {
-          // Get the depth value of the current pixel
-          auto pixels_distance = depth_frame[depth_pixel_index];
 
+          // Get the depth value of the current pixel
+          auto pixels_distance = 0zu;
+          for (size_t i = 0; i < ndepth_history; ++i)
+            pixels_distance += depth_history[i][depth_pixel_index] ?: std::numeric_limits<uint16_t>::max();
+          pixels_distance = (pixels_distance + ndepth_history / 2) / ndepth_history;
           std::memcpy(&dest[offset], valid_distance(pixels_distance) ? &p_other_frame[offset] : green_bytes, other_bpp);
         }
       }
@@ -158,7 +170,10 @@ namespace realsense {
         auto dst_offset = depth_pixel_index * bpp;
         for (size_t x = 0; x < width; x++, ++depth_pixel_index, src_offset += other_bpp, dst_offset += bpp) {
           // Get the depth value of the current pixel
-          auto pixels_distance = depth_frame[depth_pixel_index];
+          auto pixels_distance = 0zu;
+          for (size_t i = 0; i < ndepth_history; ++i)
+            pixels_distance += depth_history[i][depth_pixel_index] ?: std::numeric_limits<uint16_t>::max();
+          pixels_distance = (pixels_distance + ndepth_history / 2) / ndepth_history;
 
           if (valid_distance(pixels_distance)) {
             std::memcpy(&dest[dst_offset], &p_other_frame[src_offset], other_bpp);
@@ -194,7 +209,7 @@ namespace realsense {
       depth_scale = get_depth_scale(profile.get_device());
     }
 
-    return frameset;    
+    return frameset;
   }
 
 
@@ -235,12 +250,26 @@ namespace realsense {
   }
 
 
+  void device::set_ndepth_history(size_t newsize)
+  {
+    if (newsize != depth_history.size()) {
+      if (newsize < depth_history.size()) {
+        depth_history.resize(newsize);
+        if (last_depth_frame >= newsize)
+          last_depth_frame = 0;
+      } else
+        for (auto i = depth_history.size(); i < newsize; ++i)
+          depth_history.emplace_back(width * height);
+    }
+  }
+
+
   greenscreen::greenscreen(video_format format_)
   : format(format_), max_width(0), max_height(0)
   {
     rs2::config config;
 
-    dev = std::make_unique<device>(format, depth_clipping_min_distance, depth_clipping_max_distance, green_bytes, config);
+    dev = std::make_unique<device>(format, depth_clipping_min_distance, depth_clipping_max_distance, ndepth_history, green_bytes, config);
 
     available.emplace_back(dev->name + " [" + dev->serial + "]", dev->width, dev->height, std::to_string(dev->width) + " × " + std::to_string(dev->height), dev->serial);
 
@@ -304,7 +333,7 @@ namespace realsense {
     const std::lock_guard<std::mutex> guard(devlock);
 
     dev.reset(nullptr);
-    dev = std::make_unique<device>(format, depth_clipping_min_distance, depth_clipping_max_distance, green_bytes, config);
+    dev = std::make_unique<device>(format, depth_clipping_min_distance, depth_clipping_max_distance, ndepth_history, green_bytes, config);
 
     return true;
   }
@@ -358,4 +387,14 @@ namespace realsense {
     dev->set_max_distance(newmax);
   }
 
+  void greenscreen::set_ndepth_history(size_t newsize)
+  {
+    if (newsize != ndepth_history) {
+      const std::lock_guard<std::mutex> guard(devlock);
+
+      ndepth_history = newsize;
+
+      dev->set_ndepth_history(newsize);
+    }
+  }
 } // namespace realsense

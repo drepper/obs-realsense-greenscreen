@@ -5,7 +5,7 @@ SRCDIR = .
 
 DISTCC =
 CXX = $(DISTCC) g++
-CXXSTD = -std=gnu++20
+CXXSTD = -std=gnu++2b
 ifeq (,$(findstring clang,$(CC)$(CXX)))
 is_clang = no
 else

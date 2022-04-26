@@ -19,7 +19,7 @@ namespace realsense {
 
   struct device
   {
-    device(video_format format_, float min_distance, float max_distance, unsigned char* color, rs2::config& config);
+    device(video_format format_, float min_distance, float max_distance, size_t ndepth_history, unsigned char* color, rs2::config& config);
     ~device();
 
     bool get_frame(uint8_t*, size_t framesize);
@@ -31,6 +31,7 @@ namespace realsense {
     void set_color(uint32_t newcol);
     void set_transparency(unsigned char newa) { green_bytes[3] = newa; }
     void set_max_distance(float newmax);
+    void set_ndepth_history(size_t newsize);
 
     rs2::frameset wait();
     bool valid_distance(size_t pixels_distance) const;
@@ -54,16 +55,19 @@ namespace realsense {
     std::string serial;
 
     // Define a variable for controlling the distance to clip
-    float depth_clipping_min_distance = 0.10f;
-    float depth_clipping_max_distance = 1.00f;
+    float depth_clipping_min_distance;
+    float depth_clipping_max_distance;
 
     // Computed limit for foreground;
-    uint16_t upper_limit;
-    uint16_t lower_limit;
+    size_t upper_limit;
+    size_t lower_limit;
 
     size_t width;
     size_t height;
     size_t bpp;
+
+    std::vector<std::vector<uint16_t>> depth_history;
+    size_t last_depth_frame = 0;
 
     // device color.
     unsigned char green_bytes[4];
@@ -86,16 +90,20 @@ namespace realsense {
 
     uint32_t get_color() const { return (uint32_t(green_bytes[0]) << 16) | (uint32_t(green_bytes[1]) << 8) | uint32_t(green_bytes[2]);  }
     float get_max_distance() const { return depth_clipping_max_distance; }
+    size_t get_ndepth_history() const { return ndepth_history; }
 
     void set_color(uint32_t newcol);
     void set_transparency(unsigned char newa);
     void set_max_distance(float newmax);
+    void set_ndepth_history(size_t newsize);
 
     const video_format format;
 
     // Define a variable for controlling the distance to clip
     float depth_clipping_min_distance = 0.10f;
     float depth_clipping_max_distance = 1.00f;
+
+    size_t ndepth_history = 4;
 
     unsigned char green_bytes[4] = { 0xdd, 0x44, 0xff, 0xff };
 

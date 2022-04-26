@@ -97,6 +97,7 @@ namespace {
 
       obs_data_set_default_int(settings, "backgroundcolor", res->cam.get_color());
       obs_data_set_default_double(settings, "maxdistance", res->cam.get_max_distance());
+      obs_data_set_default_int(settings, "depthfilter", res->cam.get_ndepth_history());
 
       return res;
     }
@@ -139,10 +140,12 @@ namespace {
 
     auto resolutions = obs_properties_add_list(props, "resolutions", obs_module_text("Resolution"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
     for (const auto& e : ctx->cam.available)
-      if (std::get<0>(e) == std::get<0>(ctx->cam.available.front())) 
+      if (std::get<0>(e) == std::get<0>(ctx->cam.available.front()))
         obs_property_list_add_string(resolutions, std::get<3>(e).c_str(), std::get<3>(e).c_str());
 
     obs_properties_add_float_slider(props, "maxdistance", obs_module_text("Cutoff distance"), 0.25, 3.0, 0.0625);
+
+    obs_properties_add_int_slider(props, "depthfilter", obs_module_text("Depth Filter"), 1, 16, 1);
 
     obs_properties_add_color(props, "backgroundcolor", obs_module_text("Background Color"));
 
@@ -163,6 +166,9 @@ namespace {
 
     auto maxdistance = obs_data_get_double(settings, "maxdistance");
     ctx->cam.set_max_distance(maxdistance);
+
+    auto depthfilter = obs_data_get_int(settings, "depthfilter");
+    ctx->cam.set_ndepth_history(depthfilter);
   }
 
 

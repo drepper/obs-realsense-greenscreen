@@ -110,7 +110,7 @@ namespace {
       long width = -1;
       long height = -1;
       while (true) {
-        auto opt = getopt(argc, argv, "s:w:h:");
+        auto opt = getopt(argc, argv, "s:w:h:f:");
         if (opt == -1)
           break;
         switch (opt) {
@@ -122,6 +122,9 @@ namespace {
           break;
         case 'h':
           height = std::atoi(optarg);
+          break;
+        case 'f':
+          cam.set_ndepth_history(std::atoi(optarg));
           break;
         }
       }

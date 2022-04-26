@@ -52,7 +52,7 @@ After installation the plugin should be immediately found by OBS.  Adding it as 
 just as for other cameras, just select the "RealSense Greenscreen" source.
 
 The property dialog allows to select the device, change the resolution, set the
-maximum distance (in meters) and greenscreen color.
+maximum distance (in meters), the size of the depth filter,  and greenscreen color.
 
 After the camera source has been added one can use the chroma key filter.  To enable
 the filter select the `RealSense Greenscreen` source in the `Sources` list.  Right
@@ -61,6 +61,13 @@ This allows to add the `Chroma Key` effect filter.  Just make sure to select the
 key color as selected for the source and play a bit with the `Similarity` and
 `Key Color Spill Reduction` sliders to get an acceptable result.
 
+Filtering the depth field happens by taking the average value for the last
+*N* values.  *N=1* means no filtering.  Any larger value will increase the
+CPU time and memory needed but it will reduce the effects of the noisy
+depth field sensor.  This sensor frequently produces at random location a
+non-sensical value and simple averiging seems to be sufficient to take
+care of this.  The default value is four, meaning the average value of the
+previous four frames is used.
 
 
 Caveats
