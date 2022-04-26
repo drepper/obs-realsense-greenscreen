@@ -16,9 +16,9 @@ Building
 
 If the required packages are installed, just run `make`.  The include RPM `.spec`
 file codifies the dependencies which are
--     gcc 10 or higher (tested with C++20 only)
--     `librealsense`.  Fedora 33 ships the old 2.38 version but it worked for me.  Fedora 35 ships 2.40 which also works.
--     gtkmm 3.
+- gcc 10 or higher (tested with C++20 only)
+- `librealsense`.  Fedora 33 ships the old 2.38 version but it worked for me.  Fedora 35 ships 2.40 which also works.
+- gtkmm 3.
 
 For both `librealsense` and gtkmm it is of course necessary to install the `-devel`
 sub-package as well.
