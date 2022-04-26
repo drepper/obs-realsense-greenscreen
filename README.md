@@ -5,7 +5,7 @@ This OBS plugin allows to use the depth sensor of the Intel RealSense USB camera
 generate a virtual greenscreen.  The camera can already be used OBS directly as a
 normal camera (via V4L2) but this does not use the depth sensor.
 
-With this plugin the camera can be used directly.  The actual access to the camera
+With this plugin the camera can be used directly in OBS without OS servoces.  The actual access to the camera
 and the alignment of the video with the depth field is done by the `librealsense2`
 library.  This plugin just performs the masking and it implements the interface to
 OBS.
@@ -17,7 +17,7 @@ Building
 If the required packages are installed, just run `make`.  The include RPM `.spec`
 file codifies the dependencies which are
 -     gcc 10 or higher (tested with C++20 only)
--     `librealsense`.  Fedora 33 ships the old 2.38 version but it works for me.
+-     `librealsense`.  Fedora 33 ships the old 2.38 version but it worked for me.  Fedora 35 ships 2.40 which also works.
 -     gtkmm 3.
 
 For both `librealsense` and gtkmm it is of course necessary to install the `-devel`
@@ -32,7 +32,7 @@ directory:
 
     make ALT_LIBREALSENSE=/home/drepper/librealsense
 
-This works with the official `librealsense` sources off of github.
+This works with the official `librealsense` sources off of [github](https://github.com/IntelRealSense/librealsense.git).
 
 
 Testing
