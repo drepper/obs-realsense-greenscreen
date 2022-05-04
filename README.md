@@ -75,20 +75,18 @@ Caveats
 
 This plugin has so far been tested only on my machine:
 
--    The only camera tested so far is the L515.  I hope that the `librealsense2`
-     library handles the other devices the same.
--    I have not even tested what happens if no camera is attached.
--    The frequency of the picture provided is fixed at 30Hz.  Not sure
-     whether this needs to be variable.
--    The depth sensor is quite noisy.  When running the `testrealsense`
-     test program one can clearly see artifacts.  It might be good to
-     add more filtering.  I found, though, with some tinkering with
-     the settings of the plugin inside OBS it is possible to minimize
-     the visible effects.
--    The code allows to set a minimum distance for the mask as well.  This
-     setting is so far not carried through to the OBS properties dialog.
-     Not sure this is necessary.
--    Obviously, the code has only been tested under Fedora.
+- The only camera tested so far is the L515.  I hope that the `librealsense2`
+  library handles the other devices the same.
+- I have not even tested what happens if no camera is attached.
+- The frequency of the picture provided is fixed at 30Hz.  Not sure
+  whether this needs to be variable.
+- The depth sensor is quite noisy.  Select an appropriate depth filter
+  size.  The larger the size, the more work is required, so restrict
+  the size to a reasonable value for your machine.
+- The code allows to set a minimum distance for the mask as well.  This
+  setting is so far not carried through to the OBS properties dialog.
+  Not sure this is necessary.
+- Obviously, the code has only been tested under Fedora.
 
 
 Trouble Shooting
