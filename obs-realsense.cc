@@ -2,17 +2,102 @@
 #include <thread>
 
 #include <obs/obs.h>
+#include <obs/obs-frontend-api.h>
 #include <obs/obs-module.h>
+#include <obs/util/config-file.h>
 #include <obs/util/platform.h>
 #include <obs/util/threading.h>
+
+#include <QtCore/QString>
 
 #include "realsense-greenscreen.hh"
 
 // XYZ DEBUG
-#include <iostream>
+// #include <iostream>
 
 
 namespace {
+
+  struct config_type {
+    config_type();
+    ~config_type();
+
+    void load();
+    void save();
+
+    void set_serial(const std::string& new_serial) { serial = new_serial; }
+    void set_resolution(const std::string& new_resolution) { resolution = new_resolution; }
+    void set_backgroundcolor(int new_backgroundcolor) { backgroundcolor = new_backgroundcolor; }
+    void set_maxdistance(double new_maxdistance) { maxdistance = new_maxdistance; }
+    void set_depthfilter(int new_depthfilter) { depthfilter = new_depthfilter; }
+    const std::string& get_serial() const { return serial; }
+    const std::string& get_resolution() const { return resolution; }
+    int get_backgroundcolor() const { return backgroundcolor; }
+    double get_maxdistance() const { return maxdistance; }
+    int get_depthfilter() const { return depthfilter; }
+
+  private:
+    std::string serial;
+    std::string resolution;
+    int backgroundcolor;
+    double maxdistance;
+    int depthfilter;
+
+    static constexpr char section_name[] = "realsense-greenscreen";
+    static constexpr char param_serial[] = "serial";
+    static constexpr char param_resolution[] = "resolution";
+    static constexpr char param_backgroundcolor[] = "backgroundcolor";
+    static constexpr char param_maxdistance[] = "maxdistance";
+    static constexpr char param_depthfilter[] = "depthfilter";
+
+    static void on_frontend_event(enum obs_frontend_event event, void* param);
+  };
+
+  config_type::config_type()
+  : serial(""), resolution("")
+  {
+    config_t* obs_config = obs_frontend_get_profile_config();
+    if (obs_config != nullptr) {
+      config_set_default_string(obs_config, section_name, param_serial, serial.c_str());
+      config_set_default_string(obs_config, section_name, param_resolution, resolution.c_str());
+      config_set_default_int(obs_config, section_name, param_backgroundcolor, 0xdd44ff);
+      config_set_default_double(obs_config, section_name, param_maxdistance, 1.0);
+      config_set_default_int(obs_config, section_name, param_depthfilter, 4);
+    }
+  }
+
+  config_type::~config_type()
+  {
+  }
+
+
+  void config_type::load()
+  {
+    config_t* obs_config = obs_frontend_get_profile_config();
+
+    serial = config_get_string(obs_config, section_name, param_serial);
+    resolution = config_get_string(obs_config, section_name, param_resolution);
+    backgroundcolor = config_get_int(obs_config, section_name, param_backgroundcolor);
+    maxdistance = config_get_double(obs_config, section_name, param_maxdistance);
+    depthfilter = config_get_int(obs_config, section_name, param_depthfilter);
+  }
+
+  void config_type::save()
+  {
+    config_t* obs_config = obs_frontend_get_profile_config();
+
+    config_set_string(obs_config, section_name, param_serial, serial.c_str());
+    config_set_string(obs_config, section_name, param_resolution, resolution.c_str());
+    config_set_int(obs_config, section_name, param_backgroundcolor, backgroundcolor);
+    config_set_double(obs_config, section_name, param_maxdistance, maxdistance);
+    config_set_int(obs_config, section_name, param_depthfilter, depthfilter);
+
+    config_save(obs_config);
+  }
+
+
+  std::unique_ptr<config_type> config;
+
 
   struct plugin_context {
     plugin_context(obs_source_t* source_);
@@ -38,6 +123,11 @@ namespace {
     cam(realsense::video_format::rgba),
     thread(call_video_thread, this)
   {
+    if (! config->get_serial().empty() || ! config->get_resolution().empty())
+      cam.new_config(config->get_serial(), config->get_resolution());
+    cam.set_color(config->get_backgroundcolor());
+    cam.set_max_distance(config->get_maxdistance());
+    cam.set_ndepth_history(config->get_depthfilter());
   }
 
 
@@ -118,8 +208,11 @@ namespace {
 
   void plugin_defaults(obs_data_t* settings)
   {
-    obs_data_set_string(settings, "devicename", "");
-    obs_data_set_string(settings, "resolutions", "");
+    obs_data_set_string(settings, "devicename", config->get_serial().c_str());
+    obs_data_set_string(settings, "resolution", config->get_resolution().c_str());
+    obs_data_set_int(settings, "backgroundcolor", config->get_backgroundcolor());
+    obs_data_set_double(settings, "maxdistance", config->get_maxdistance());
+    obs_data_set_int(settings, "depthfilter", config->get_depthfilter());
   }
 
 
@@ -138,7 +231,7 @@ namespace {
       }
     obs_property_set_modified_callback2(devicename, device_selected, data);
 
-    auto resolutions = obs_properties_add_list(props, "resolutions", obs_module_text("Resolution"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+    auto resolutions = obs_properties_add_list(props, "resolution", obs_module_text("Resolution"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
     for (const auto& e : ctx->cam.available)
       if (std::get<0>(e) == std::get<0>(ctx->cam.available.front()))
         obs_property_list_add_string(resolutions, std::get<3>(e).c_str(), std::get<3>(e).c_str());
@@ -158,17 +251,27 @@ namespace {
     auto ctx = static_cast<plugin_context*>(data);
 
     auto serial = obs_data_get_string(settings, "devicename");
-    auto resolution = obs_data_get_string(settings, "resolutions");
+    auto resolution = obs_data_get_string(settings, "resolution");
+    blog(LOG_INFO, "serial=%s  resolution=%s", serial, resolution);
     ctx->cam.new_config(serial, resolution);
+    if (serial[0] != '\0')
+      config->set_serial(serial);
+    if (resolution[0] != '\0')
+      config->set_resolution(resolution);
 
     auto color = (uint32_t) obs_data_get_int(settings, "backgroundcolor");
     ctx->cam.set_color(color);
+    config->set_backgroundcolor(color);
 
     auto maxdistance = obs_data_get_double(settings, "maxdistance");
     ctx->cam.set_max_distance(maxdistance);
+    config->set_maxdistance(maxdistance);
 
     auto depthfilter = obs_data_get_int(settings, "depthfilter");
     ctx->cam.set_ndepth_history(depthfilter);
+    config->set_depthfilter(depthfilter);
+
+    config->save();
   }
 
 
@@ -196,6 +299,9 @@ OBS_MODULE_USE_DEFAULT_LOCALE("obs-realsense", "en-US")
 
 extern "C" bool obs_module_load(void)
 {
+  config = std::make_unique<config_type>();
+  config->load();
+
   obs_register_source(&realsense_info);
   return true;
 }

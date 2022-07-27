@@ -105,7 +105,7 @@ namespace realsense {
 
     size_t ndepth_history = 4;
 
-    unsigned char green_bytes[4] = { 0xdd, 0x44, 0xff, 0xff };
+    unsigned char green_bytes[4] = { 0xdd, 0x44, 0xff, 0x00 };
 
     size_t max_width;
     size_t max_height;
