@@ -12,7 +12,7 @@ else
 is_clang = yes
 endif
 
-PACKAGES = realsense2
+PACKAGES = realsense2 Qt5Core
 PACKAGES-testrealsense.o = gtkmm-3.0
 ifeq ($(PACKAGES),)
 PKGCONFIG = true

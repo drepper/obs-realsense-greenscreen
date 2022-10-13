@@ -74,7 +74,7 @@ namespace realsense {
   }// anonymous namespace
 
 
-  device::device(video_format format_, float min_distance, float max_distance, size_t ndepth_history, unsigned char* color, rs2::config& config)
+  device::device(video_format format_, float max_distance, size_t ndepth_history, unsigned char* color, rs2::config& config)
   : format(format_),
     // Create the pipeline object.
     pipe(std::make_unique<rs2::pipeline>()),
@@ -93,11 +93,9 @@ namespace realsense {
     // Using the pipeline's profile, we can retrieve the device that the pipeline uses
     depth_scale(get_depth_scale(profile.get_device())),
     // From the caller.
-    depth_clipping_min_distance(min_distance),
     depth_clipping_max_distance(max_distance),
     // Compute the foreground limit
-    upper_limit(depth_clipping_max_distance / depth_scale),
-    lower_limit(depth_clipping_min_distance / depth_scale)
+    upper_limit(depth_clipping_max_distance / depth_scale)
   {
     // Get one frame to determine the size.
     auto frameset = wait();
@@ -126,7 +124,7 @@ namespace realsense {
 
   inline bool device::valid_distance(size_t pixels_distance) const
   {
-    return pixels_distance > lower_limit && pixels_distance <= upper_limit;
+    return pixels_distance <= upper_limit;
   }
 
 
@@ -269,7 +267,7 @@ namespace realsense {
   {
     rs2::config config;
 
-    dev = std::make_unique<device>(format, depth_clipping_min_distance, depth_clipping_max_distance, ndepth_history, green_bytes, config);
+    dev = std::make_unique<device>(format, depth_clipping_max_distance, ndepth_history, green_bytes, config);
 
     available.emplace_back(dev->name + " [" + dev->serial + "]", dev->width, dev->height, std::to_string(dev->width) + " × " + std::to_string(dev->height), dev->serial);
 
@@ -333,7 +331,7 @@ namespace realsense {
     const std::lock_guard<std::mutex> guard(devlock);
 
     dev.reset(nullptr);
-    dev = std::make_unique<device>(format, depth_clipping_min_distance, depth_clipping_max_distance, ndepth_history, green_bytes, config);
+    dev = std::make_unique<device>(format, depth_clipping_max_distance, ndepth_history, green_bytes, config);
 
     return true;
   }

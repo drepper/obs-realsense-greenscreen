@@ -19,7 +19,7 @@ namespace realsense {
 
   struct device
   {
-    device(video_format format_, float min_distance, float max_distance, size_t ndepth_history, unsigned char* color, rs2::config& config);
+    device(video_format format_, float max_distance, size_t ndepth_history, unsigned char* color, rs2::config& config);
     ~device();
 
     bool get_frame(uint8_t*, size_t framesize);
@@ -55,12 +55,10 @@ namespace realsense {
     std::string serial;
 
     // Define a variable for controlling the distance to clip
-    float depth_clipping_min_distance;
     float depth_clipping_max_distance;
 
     // Computed limit for foreground;
     size_t upper_limit;
-    size_t lower_limit;
 
     size_t width;
     size_t height;
@@ -100,7 +98,6 @@ namespace realsense {
     const video_format format;
 
     // Define a variable for controlling the distance to clip
-    float depth_clipping_min_distance = 0.10f;
     float depth_clipping_max_distance = 1.00f;
 
     size_t ndepth_history = 4;
