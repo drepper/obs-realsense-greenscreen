@@ -1,4 +1,4 @@
-VERSION = 1.2
+VERSION = 1.3
 
 PROJECT = obs-realsense.so
 SRCDIR = .
@@ -12,8 +12,9 @@ else
 is_clang = yes
 endif
 
-PACKAGES = realsense2 Qt5Core
-PACKAGES-testrealsense.o = gtkmm-3.0
+PACKAGES = realsense2 Qt6Core
+PACKAGES-testplugin.o = libobs
+PACKAGES-testrealsense.o = gtkmm-3.0 glibmm-2.4
 ifeq ($(PACKAGES),)
 PKGCONFIG = true
 else
@@ -75,7 +76,7 @@ CHECKTARGETS = check
 
 LIBS = $(LIBS-$@)
 LIBS-obs-realsense.so = $$($(PKGCONFIG) --libs $(PACKAGES)) -lpthread
-LIBS-testplugin = -lpthread -ldl
+LIBS-testplugin = $$($(PKGCONFIG) --libs $(PACKAGES-testplugin.o)) -lobs-frontend-api -lpthread -ldl
 LIBS-testrealsense = $$($(PKGCONFIG) --libs $(PACKAGES) $(PACKAGES-testrealsense.o))
 
 

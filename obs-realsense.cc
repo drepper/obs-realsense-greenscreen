@@ -1,19 +1,25 @@
+#include <atomic>
 #include <cstdint>
 #include <thread>
 
 #include <obs/obs.h>
 #include <obs/obs-frontend-api.h>
 #include <obs/obs-module.h>
+#include <obs/util/base.h>
 #include <obs/util/config-file.h>
 #include <obs/util/platform.h>
 #include <obs/util/threading.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
 #include <QtCore/QString>
+#pragma GCC diagnostic pop
 
 #include "realsense-greenscreen.hh"
 
 // XYZ DEBUG
 // #include <iostream>
+static int log_level = LOG_DEBUG;
 
 
 namespace {
@@ -25,8 +31,8 @@ namespace {
     void load();
     void save();
 
-    void set_serial(const std::string& new_serial) { serial = new_serial; }
-    void set_resolution(const std::string& new_resolution) { resolution = new_resolution; }
+    void set_serial(const char* new_serial) { serial = new_serial; }
+    void set_resolution(const char* new_resolution) { resolution = new_resolution; }
     void set_backgroundcolor(int new_backgroundcolor) { backgroundcolor = new_backgroundcolor; }
     void set_maxdistance(double new_maxdistance) { maxdistance = new_maxdistance; }
     void set_depthfilter(int new_depthfilter) { depthfilter = new_depthfilter; }
@@ -182,6 +188,8 @@ namespace {
 
   void* plugin_create(obs_data_t* settings, obs_source_t* source)
   {
+    blog(log_level, "obs-realsense: create");
+
     try {
       auto res = new plugin_context(source);
 
@@ -194,11 +202,15 @@ namespace {
     catch (rs2::backend_error& e) {
       return nullptr;
     }
+
+    blog(log_level, "obs-realsense: create done");
   }
 
 
   void plugin_destroy(void* data)
   {
+    blog(log_level, "obs-realsense: destroy");
+
     auto ctx = static_cast<plugin_context*>(data);
 
     if (ctx)
@@ -208,6 +220,8 @@ namespace {
 
   void plugin_defaults(obs_data_t* settings)
   {
+    blog(log_level, "obs-realsense: defaults");
+
     obs_data_set_string(settings, "devicename", config->get_serial().c_str());
     obs_data_set_string(settings, "resolution", config->get_resolution().c_str());
     obs_data_set_int(settings, "backgroundcolor", config->get_backgroundcolor());
@@ -218,6 +232,8 @@ namespace {
 
   obs_properties_t* plugin_properties(void *data)
   {
+    blog(log_level, "obs-realsense: properties");
+
     auto ctx = static_cast<plugin_context*>(data);
 
     auto props = obs_properties_create();
@@ -248,28 +264,37 @@ namespace {
 
   void plugin_update(void* data, obs_data_t* settings)
   {
+    blog(log_level, "obs-realsense: update");
+
     auto ctx = static_cast<plugin_context*>(data);
 
     auto serial = obs_data_get_string(settings, "devicename");
     auto resolution = obs_data_get_string(settings, "resolution");
     blog(LOG_INFO, "serial=%s  resolution=%s", serial, resolution);
     ctx->cam.new_config(serial, resolution);
-    if (serial[0] != '\0')
+    if (serial[0] != '\0') {
+      blog(log_level, "obs-realsense: serial=%s", serial);
       config->set_serial(serial);
-    if (resolution[0] != '\0')
+    }
+    if (resolution[0] != '\0') {
+      blog(log_level, "obs-realsense: resolution=%s", resolution);
       config->set_resolution(resolution);
+    }
 
     auto color = (uint32_t) obs_data_get_int(settings, "backgroundcolor");
     ctx->cam.set_color(color);
     config->set_backgroundcolor(color);
+    blog(log_level, "obs-realsense: color=%06x", color);
 
     auto maxdistance = obs_data_get_double(settings, "maxdistance");
     ctx->cam.set_max_distance(maxdistance);
     config->set_maxdistance(maxdistance);
+    blog(log_level, "obs-realsense: maxdistance=%f", maxdistance);
 
     auto depthfilter = obs_data_get_int(settings, "depthfilter");
     ctx->cam.set_ndepth_history(depthfilter);
     config->set_depthfilter(depthfilter);
+    blog(log_level, "obs-realsense: depthfilter=%lld", depthfilter);
 
     config->save();
   }
@@ -299,6 +324,8 @@ OBS_MODULE_USE_DEFAULT_LOCALE("obs-realsense", "en-US")
 
 extern "C" bool obs_module_load(void)
 {
+  blog(log_level, "loading obs-realsense");
+
   config = std::make_unique<config_type>();
   config->load();
 
